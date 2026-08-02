@@ -103,43 +103,15 @@
     const nameInput = document.getElementById('guest-name');
     const errorMsg = document.getElementById('error-msg');
 
-    // Mappa esatta degli HASH SHA-256 dei 24 nomi
-    const allowedHashes = [
-      "d7bf1fb287cfeb0c383049da0305be0f8f87e59c11bd3d4aa09d945b08c69784", // salvo
-      "1c35fb7a3c36dd16cb289b4f97e372ee025b331f496eb6404c000e3f8a4ef4f3", // salvatore
-      "a6f3bda4957e2c9ef8f0b7c7b8e19e7104b2b3ed23297ee6132ec5f0e9b6263f", // matte
-      "91bc479b3a0df4706be220f8369cf4f479836561e1248a335029a2ee644bf418", // matteo
-      "628b26410bf183f0c3f5bf40a6b4eeea1203eb65f14e6b1d440ae1e7a5d3f237", // nino
-      "bf1a9829ed80004ff971b8ee63c0a6b57d6e6ea3b48231015f6060ddda9d3b19", // rocco
-      "227bd98dc85ff30e95ca03e61ff39bc804bb0f59275e7a935bf755f10b7ee044", // elia
-      "38adcb43c7b8cbfa6cf3ef09d84cfcb0b48f936f4c80eb60f09a5b4be33c46a6", // giovanni
-      "edcff58d2484a0d9b4c09d026bd364a02be06e6bf47f3b508d381ebf5f70bb00", // riccardo
-      "1b7eb6441bf7fb932eb5d56b0b30ee3884102c7b508a5fa2b733b8a1c9006fa7", // alberto
-      "80cc71d62c2f42a59a764d9ebc6e21013a290940aa2e7f8e8e7c2a71bf9d123e", // diego
-      "cbddb785d03a11dc5a24285df64609756185bbbbce475bc21782e42edae50074", // amelie
-      "f7ca951e71a067ff5c90b6efef13c9fbfa7f21e5e6480ff673fa13809228a8d0", // tommaso
-      "bf8083a216f40b28dd7e27943f2953bebc29618f3d64115e4a8a5f82bb525f0c", // antonio
-      "fcf74b77d612f00d860d5eb2964860b0808a3d46387d2ef1c12e84841865a7e5", // anto
-      "3a84b0f0a256247738222956cf5aa731e05d0397ae0d2f099ea6a2e4a682f767", // neno
-      "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", // stefano
-      "ba8c0fb4ea2950529d2116086f68e7ec8935ef7d21c81c1c1a967f6208579d4a", // enrico
-      "b63110e527f551b9e0f6b46ef85b2e51f4c718b53d100c5a27814421b585352e", // alessio
-      "d2ad20391b1a7d65b750dd1eb728519c25345719e7cf093ebf37f3eb30855365", // luca
-      "10cb1050c3d9a5b3ee5c5e88bb0be8eb7d65942fdf4e45d1ec5cf08b3e8e1957", // giova
-      "189673941450a8b13d2fa1ef1a4c952328b9750059c258380eb9a382348c6b73", // marco
-      "bfbb7eb62c2f82161f3640b3c639bb04505f5d6f35b8813ef6a7f5a5e3c880f0", // fabio
-      "936b8c9d0901e16f39105ed62fa00b3e75e11d1c4f5263a2d21fa4ff441f6e21"  // silvia
+    // Lista dei 24 nomi autorizzati in chiaro (in minuscolo)
+    const allowedNames = [
+      "salvo", "salvatore", "matte", "matteo", "nino", "rocco", 
+      "elia", "giovanni", "riccardo", "alberto", "diego", "amelie", 
+      "tommaso", "antonio", "anto", "neno", "stefano", "enrico", 
+      "alessio", "luca", "giova", "marco", "fabio", "silvia"
     ];
 
-    // Funzione SHA-256 standard
-    async function getSHA256(str) {
-      const msgBuffer = new TextEncoder().encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
       
       const rawName = nameInput.value.trim();
@@ -149,22 +121,17 @@
 
       if (!rawName) return;
 
-      try {
-        const inputHash = await getSHA256(normalizedName);
-
-        if (allowedHashes.includes(inputHash)) {
-          // Salva in sessionStorage
-          sessionStorage.setItem('playerName', rawName);
-          
-          // Reindirizza
-          window.location.href = './wheelofd.html';
-        } else {
-          errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
-          nameInput.value = "";
-        }
-      } catch (err) {
-        console.error("Errore:", err);
-        errorMsg.textContent = "Si è verificato un errore di verifica.";
+      // Controllo diretto (Case-Insensitive)
+      if (allowedNames.includes(normalizedName)) {
+        // 1. Salva il nome digitato in sessionStorage
+        sessionStorage.setItem('playerName', rawName);
+        
+        // 2. Reindirizza a wheelofd.html
+        window.location.href = './wheelofd.html';
+      } else {
+        // Mostra errore se il nome non è autorizzato
+        errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
+        nameInput.value = "";
       }
     });
   </script>
