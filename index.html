@@ -124,12 +124,6 @@
     </form>
   </div>
 
-  <!-- SCHERMATA PRIMO ENIGMA -->
-  <div id="screen-puzzle-1" class="screen hidden">
-    <h1 id="welcome-title">Primo Enigma</h1>
-    <p class="puzzle-text">Ecco la tua prima sfida...</p>
-  </div>
-
   <script>
     const form = document.getElementById('start-form');
     const nameInput = document.getElementById('guest-name');
@@ -178,19 +172,24 @@
       e.preventDefault();
       
       const rawName = nameInput.value.trim();
-      const normalizedName = rawName.toLowerCase();
+      const normalizedName = rawName.toLowerCase().normalize('NFC');
       
       errorMsg.textContent = "";
 
-      const inputHash = await hashName(normalizedName);
+      try {
+        const inputHash = await hashName(normalizedName);
 
-      if (allowedHashes.includes(inputHash)) {
-        screenLogin.classList.add('hidden');
-        screenPuzzle1.classList.remove('hidden');
-        welcomeTitle.textContent = `Buona fortuna, ${rawName}`;
-      } else {
-        errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
-        nameInput.value = "";
+        if (allowedHashes.includes(inputHash)) {
+          screenLogin.classList.add('hidden');
+          screenPuzzle1.classList.remove('hidden');
+          welcomeTitle.textContent = `Buona fortuna, ${rawName}`;
+        } else {
+          errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
+          nameInput.value = "";
+        }
+      } catch (err) {
+        console.error("Errore durante la verifica:", err);
+        errorMsg.textContent = "Si è verificato un errore. Riprova.";
       }
     });
   </script>
