@@ -2,13 +2,14 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Wheel of D</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      touch-action: manipulation;
     }
 
     body {
@@ -20,129 +21,207 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     header {
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       text-align: center;
     }
 
     header h1 {
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 300;
       letter-spacing: 2px;
+    }
+
+    .status-bar {
+      font-size: 0.95rem;
+      color: #aaaaaa;
+      margin-top: 5px;
     }
 
     /* Container Principale Responsivo */
     .game-container {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1000px;
       display: flex;
-      flex-direction: column; /* Layout Mobile (default): dall'alto verso il basso */
+      flex-direction: column; /* Layout Mobile: dall'alto verso il basso */
       align-items: center;
-      gap: 40px;
+      gap: 30px;
     }
 
-    /* === ZONA 1: BOX CONCENTRICI === */
-    .concentric-zone {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    /* === ZONA 1: CERCHI CONCENTRICI ROTANTI === */
+    .wheel-zone {
+      position: relative;
       width: 100%;
-      max-width: 350px;
+      max-width: 360px;
       aspect-ratio: 1 / 1;
-    }
-
-    /* Box 1 (Esterno) */
-    .box-outer {
-      width: 100%;
-      height: 100%;
-      border: 2px solid #ffffff;
-      border-radius: 12px;
-      padding: 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: #0a0a0a;
+      margin: 0 auto;
     }
 
-    /* Box 2 (Intermedio) */
-    .box-middle {
-      width: 100%;
-      height: 100%;
-      border: 2px dashed #888888;
-      border-radius: 8px;
-      padding: 20px;
+    /* Indicatore di allineamento (Freccia in alto ore 12) */
+    .alignment-marker {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 15px solid #ffffff;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .wheel-ring {
+      position: absolute;
+      border-radius: 50%;
+      cursor: grab;
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: #111111;
+      transition: border-color 0.2s ease;
+      touch-action: none; /* Impedisce lo scroll durante il drag touch */
     }
 
-    /* Box 3 (Interno) */
-    .box-inner {
+    .wheel-ring:active {
+      cursor: grabbing;
+    }
+
+    /* Anello Esterno */
+    .ring-outer {
       width: 100%;
       height: 100%;
-      border: 2px solid #444444;
-      border-radius: 4px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #1a1a1a;
-      overflow: hidden;
+      border: 3px solid #333333;
+      z-index: 1;
     }
 
-    .box-inner img {
+    /* Anello Intermedio */
+    .ring-middle {
+      width: 68%;
+      height: 68%;
+      border: 3px solid #555555;
+      z-index: 2;
+    }
+
+    /* Anello Interno */
+    .ring-inner {
+      width: 36%;
+      height: 36%;
+      border: 3px solid #888888;
+      z-index: 3;
+    }
+
+    /* Immagini trasparenti dei cerchi ritagliati */
+    .ring-img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      border-radius: 50%;
+      object-fit: contain;
+      pointer-events: none;
     }
 
-    /* === ZONA 2: GRIGLIA 3x3 === */
+    /* === ZONA 2: GRIGLIA 3x3 (QR Code) === */
     .grid-zone {
       width: 100%;
-      max-width: 450px;
+      max-width: 360px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      gap: 12px;
+      gap: 6px;
       aspect-ratio: 1 / 1;
+      background-color: #111111;
+      padding: 6px;
+      border: 2px solid #333333;
+      border-radius: 8px;
     }
 
-    .grid-item {
-      background-color: #111111;
-      border: 1px solid #333333;
-      border-radius: 6px;
+    .grid-tile {
+      background-color: #0a0a0a;
+      border: 1px dashed #222222;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
-      cursor: pointer;
-      transition: border-color 0.2s ease, transform 0.2s ease;
     }
 
-    .grid-item:hover {
-      border-color: #ffffff;
-      transform: scale(1.02);
+    .grid-tile span {
+      color: #333333;
+      font-size: 1rem;
+      font-weight: bold;
     }
 
-    .grid-item img {
+    .grid-tile img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
-    /* === DESKTOP / TABLET (Schermi > 768px) === */
+    .grid-tile.unlocked img {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .grid-tile.unlocked {
+      border: none;
+    }
+
+    /* Messaggio di successo */
+    .success-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .success-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .success-modal h2 {
+      font-size: 2rem;
+      color: #00ff88;
+      margin-bottom: 15px;
+    }
+
+    /* === DESKTOP (Schermi > 768px) === */
     @media (min-width: 768px) {
       .game-container {
-        flex-direction: row; /* Layout PC: affiancato Sinistra/Destra */
+        flex-direction: row; /* PC: Affiancati Sinistra / Destra */
         justify-content: center;
         align-items: center;
         gap: 60px;
-        padding-top: 20px;
+        padding-top: 30px;
       }
 
-      .concentric-zone, .grid-zone {
+      .wheel-zone, .grid-zone {
         max-width: 400px;
       }
     }
@@ -151,44 +230,185 @@
 <body>
 
   <header>
-    <h1 id="player-welcome">Wheel of D</h1>
+    <h1 id="player-title">Wheel of D</h1>
+    <div class="status-bar">Simbolo <span id="current-stage">1</span> / 9 completati</div>
   </header>
 
   <main class="game-container">
     
-    <!-- ZONA CONCENTRICA (Sinistra su PC / Sopra su Mobile) -->
-    <section class="concentric-zone">
-      <div class="box-outer">
-        <div class="box-middle">
-          <div class="box-inner" id="target-box">
-            <!-- Immagine di destinazione/centrale -->
-            <span style="color: #666; font-size: 0.8rem;">Box Interno</span>
-          </div>
-        </div>
+    <!-- ZONA RUOTA A CERCHI CONCENTRICI ROTANTI -->
+    <section class="wheel-zone" id="wheel-container">
+      <div class="alignment-marker"></div>
+
+      <!-- Cerchio Esterno -->
+      <div class="wheel-ring ring-outer" id="ring-outer">
+        <img src="outer.png" alt="Anello Esterno" class="ring-img" onerror="this.style.display='none'">
+      </div>
+
+      <!-- Cerchio Intermedio -->
+      <div class="wheel-ring ring-middle" id="ring-middle">
+        <img src="middle.png" alt="Anello Intermedio" class="ring-img" onerror="this.style.display='none'">
+      </div>
+
+      <!-- Cerchio Interno -->
+      <div class="wheel-ring ring-inner" id="ring-inner">
+        <img src="inner.png" alt="Anello Interno" class="ring-img" onerror="this.style.display='none'">
       </div>
     </section>
 
-    <!-- ZONA GRIGLIA 3x3 (Destra su PC / Sotto su Mobile) -->
+    <!-- ZONA GRIGLIA 3x3 (QR Code) -->
     <section class="grid-zone">
-      <div class="grid-item"><span style="color: #444;">1</span></div>
-      <div class="grid-item"><span style="color: #444;">2</span></div>
-      <div class="grid-item"><span style="color: #444;">3</span></div>
-      <div class="grid-item"><span style="color: #444;">4</span></div>
-      <div class="grid-item"><span style="color: #444;">5</span></div>
-      <div class="grid-item"><span style="color: #444;">6</span></div>
-      <div class="grid-item"><span style="color: #444;">7</span></div>
-      <div class="grid-item"><span style="color: #444;">8</span></div>
-      <div class="grid-item"><span style="color: #444;">9</span></div>
+      <div class="grid-tile" id="tile-0"><span>1</span><img src="qr_1.png" alt="QR 1" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-1"><span>2</span><img src="qr_2.png" alt="QR 2" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-2"><span>3</span><img src="qr_3.png" alt="QR 3" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-3"><span>4</span><img src="qr_4.png" alt="QR 4" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-4"><span>5</span><img src="qr_5.png" alt="QR 5" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-5"><span>6</span><img src="qr_6.png" alt="QR 6" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-6"><span>7</span><img src="qr_7.png" alt="QR 7" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-7"><span>8</span><img src="qr_8.png" alt="QR 8" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-8"><span>9</span><img src="qr_9.png" alt="QR 9" onerror="this.style.display='none'"></div>
     </section>
 
   </main>
 
-  <script>
-    // Recupera il nome salvato nella pagina di login
-    const playerName = sessionStorage.getItem('playerName');
+  <!-- Modal di completamento -->
+  <div class="success-modal" id="success-modal">
+    <h2>QR Code Completato!</h2>
+    <p>Hai allineato tutti e 9 i simboli con successo.</p>
+  </div>
 
+  <script>
+    // Recupera nome del giocatore da sessionStorage
+    const playerName = sessionStorage.getItem('playerName');
     if (playerName) {
-      document.getElementById('player-welcome').textContent = `Sfida per ${playerName}`;
+      document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
+    }
+
+    // Configurazione dei 9 simboli (Gradi target per Outer, Middle, Inner)
+    // Puoi personalizzare gli angoli target (da 0 a 360°) per ciascuno dei 9 simboli
+    const targetAngles = [
+      { outer: 45,  middle: 120, inner: 270 }, // Simbolo 1
+      { outer: 90,  middle: 180, inner: 45  }, // Simbolo 2
+      { outer: 180, middle: 45,  inner: 135 }, // Simbolo 3
+      { outer: 270, middle: 270, inner: 90  }, // Simbolo 4
+      { outer: 0,   middle: 90,  inner: 225 }, // Simbolo 5
+      { outer: 135, middle: 315, inner: 0   }, // Simbolo 6
+      { outer: 225, middle: 60,  inner: 180 }, // Simbolo 7
+      { outer: 315, middle: 210, inner: 315 }, // Simbolo 8
+      { outer: 60,  middle: 330, inner: 105 }  // Simbolo 9
+    ];
+
+    let currentStage = 0; // Da 0 a 8
+    const tolerance = 7;   // Tolleranza in gradi per considerare l'allineamento corretto
+
+    // Stato rotazione corrente dei 3 anelli (in gradi)
+    const ringsState = {
+      outer: 0,
+      middle: 0,
+      inner: 0
+    };
+
+    // Inizializza l'interazione libera con Mouse e Touch
+    function setupRingRotation(ringId, ringKey) {
+      const ringEl = document.getElementById(ringId);
+      let isDragging = false;
+      let startAngle = 0;
+      let initialRotation = 0;
+
+      function getAngle(clientX, clientY) {
+        const rect = ringEl.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const radians = Math.atan2(clientY - centerY, clientX - centerX);
+        let degrees = radians * (180 / Math.PI);
+        return degrees < 0 ? degrees + 360 : degrees;
+      }
+
+      function onStart(e) {
+        isDragging = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startAngle = getAngle(clientX, clientY);
+        initialRotation = ringsState[ringKey];
+        e.preventDefault();
+      }
+
+      function onMove(e) {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const currentAngle = getAngle(clientX, clientY);
+        let delta = currentAngle - startAngle;
+
+        let newRotation = (initialRotation + delta) % 360;
+        if (newRotation < 0) newRotation += 360;
+
+        ringsState[ringKey] = newRotation;
+        ringEl.style.transform = `rotate(${newRotation}deg)`;
+
+        checkAlignment();
+      }
+
+      function onEnd() {
+        isDragging = false;
+      }
+
+      ringEl.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+
+      ringEl.addEventListener('touchstart', onStart, { passive: false });
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    setupRingRotation('ring-outer', 'outer');
+    setupRingRotation('ring-middle', 'middle');
+    setupRingRotation('ring-inner', 'inner');
+
+    // Calcola la differenza minima di angolo (gestendo il ciclo 0-360)
+    function angleDiff(a, b) {
+      let diff = Math.abs((a - b) % 360);
+      return diff > 180 ? 360 - diff : diff;
+    }
+
+    // Controlla se i 3 cerchi sono allineati ai target dello stage attuale
+    function checkAlignment() {
+      if (currentStage >= 9) return;
+
+      const target = targetAngles[currentStage];
+      const diffOuter = angleDiff(ringsState.outer, target.outer);
+      const diffMiddle = angleDiff(ringsState.middle, target.middle);
+      const diffInner = angleDiff(ringsState.inner, target.inner);
+
+      if (diffOuter <= tolerance && diffMiddle <= tolerance && diffInner <= tolerance) {
+        unlockTile(currentStage);
+      }
+    }
+
+    // Sblocca un tessello della griglia 3x3 e passa allo stage successivo
+    function unlockTile(stageIndex) {
+      const tileEl = document.getElementById(`tile-${stageIndex}`);
+      if (tileEl && !tileEl.classList.contains('unlocked')) {
+        tileEl.classList.add('unlocked');
+
+        // Effetto grafico sul bordo dell'anello
+        document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
+        setTimeout(() => {
+          document.getElementById('ring-outer').style.borderColor = '#333333';
+          document.getElementById('ring-middle').style.borderColor = '#555555';
+          document.getElementById('ring-inner').style.borderColor = '#888888';
+        }, 600);
+
+        currentStage++;
+        document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+
+        if (currentStage >= 9) {
+          setTimeout(() => {
+            document.getElementById('success-modal').classList.add('show');
+          }, 800);
+        }
+      }
     }
   </script>
 
