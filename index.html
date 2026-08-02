@@ -103,39 +103,19 @@
     const nameInput = document.getElementById('guest-name');
     const errorMsg = document.getElementById('error-msg');
 
-    // Calcola l'hash SHA-256 del nome
-    async function hashName(name) {
-      const msgUint8 = new TextEncoder().encode(name);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
       
       const rawName = nameInput.value.trim();
-      const normalizedName = rawName.toLowerCase().normalize('NFC');
       
-      errorMsg.textContent = "";
-
-      try {
-        const targetPage = await hashName(normalizedName);
-        const destinationUrl = `./${targetPage}.html`;
-
-        // Verifichiamo se la pagina esiste prima di reindirizzare
-        const response = await fetch(destinationUrl, { method: 'HEAD' });
-
-        if (response.ok) {
-          // Reindirizza alla pagina specifica dell'invitato!
-          window.location.href = destinationUrl;
-        } else {
-          errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
-          nameInput.value = "";
-        }
-      } catch (err) {
-        console.error("Errore:", err);
-        errorMsg.textContent = "Si è verificato un errore. Riprova.";
+      if (rawName) {
+        // 1. Salva il nome inserito nella sessionStorage del browser
+        sessionStorage.setItem('playerName', rawName);
+        
+        // 2. Reindirizza l'utente alla pagina della ruota
+        window.location.href = './wheelofd.html';
+      } else {
+        errorMsg.textContent = "Inserisci un nome valido per proseguire.";
       }
     });
   </script>
