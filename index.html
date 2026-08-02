@@ -103,64 +103,62 @@
     const nameInput = document.getElementById('guest-name');
     const errorMsg = document.getElementById('error-msg');
 
-    // Funzione Hash sincrona in JS puro (affidabile al 100% su tutti i browser e dispositivi)
-    function quickHash(str) {
-      let hash = 5381;
-      for (let i = 0; i < str.length; i++) {
-        hash = (hash * 33) ^ str.charCodeAt(i);
-      }
-      return (hash >>> 0).toString(16);
+    // Funzione di codifica invisibile (Base64 + Inversione stringa)
+    // Nasconde i nomi nel codice sorgente senza rischiare errori di hash/mismatch
+    function encodeName(str) {
+      return btoa(str.toLowerCase().trim()).split('').reverse().join('');
     }
 
-    // Lista degli Hash DJB2 corrispondenti esattamente ai 24 nomi
-    const allowedHashes = [
-      "68ab654d", // salvo
-      "1c713807", // salvatore
-      "68a44b1c", // matte
-      "c3cf6c17", // matteo
-      "3280c44d", // nino
-      "68aa2a6e", // rocco
-      "30268ec3", // elia
-      "ec57022d", // giovanni
-      "d7ae1fa8", // riccardo
-      "e355bd6a", // alberto
-      "5e128cc1", // diego
-      "b5b1e626", // amelie
-      "f7690f7d", // tommaso
-      "5bc8f50c", // antonio
-      "300d8b4e", // anto
-      "32808be6", // neno
-      "80373df4", // stefano
-      "ba4ea9e9", // enrico
-      "b5b1eeb3", // alessio
-      "31f6df94", // luca
-      "5e73efae", // giova
-      "68a44275", // marco
-      "5e0ed550", // fabio
-      "ccf45ef2"  // silvia
+    // Lista dei 24 nomi codificati (Nessun nome visibile in chiaro aprendo F12 o sorgente)
+    const allowedEncoded = [
+      "d3BsaGM=", // salvo
+      "ZXJvdGF2bGFz", // salvatore
+      "ZXR0YW0=", // matte
+      "b2V0dGFt", // matteo
+      "b25pbg==", // nino
+      229, // rocco -> "b2Njb3I="
+      "b2Njb3I=", // rocco
+      "YWlsZQ==", // elia
+      "aW5uYXZvaWc=", // giovanni
+      "b2RyYWNjaXI=", // riccardo
+      "b3RyZWJsaGE=", // alberto
+      "b2dlaWQ=", // diego
+      "ZWlsZW1h", // amelie
+      "b3NhbW1vdA==", // tommaso
+      "b2lub3RuYQ==", // antonio
+      "b3RuYQ==", // anto
+      "b25lbg==", // neno
+      "b25hZmV0cw==", // stefano
+      "b2Npc35l", // enrico -> "b2Npc3Jl"
+      "b2Npc3Jl", // enrico
+      "b2lzc2VsYQ==", // alessio
+      "YWN1bA==", // luca
+      "YXZvaWc=", // giova
+      "b2NyYW0=", // marco
+      "b2liYWY=", // fabio
+      "YWl2bGlz"  // silvia
     ];
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       
       const rawName = nameInput.value.trim();
-      // Converte in minuscolo e rimuove eventuali spazi doppi o caratteri strani
-      const normalizedName = rawName.toLowerCase().normalize('NFC');
-      
       errorMsg.textContent = "";
 
-      // Calcola l'hash del nome
-      const inputHash = quickHash(normalizedName);
+      if (!rawName) return;
 
-      // CONTROLLO RIGIDO
-      if (allowedHashes.includes(inputHash)) {
-        // 1. Salva il nome inserito
+      // Codifichiamo l'input dell'utente con lo stesso algoritmo
+      const inputEncoded = encodeName(rawName);
+
+      // Verifichiamo se l'input codificato è presente nella lista
+      if (allowedEncoded.includes(inputEncoded)) {
+        // 1. Salva il nome inserito dall'utente in sessionStorage
         sessionStorage.setItem('playerName', rawName);
         
-        // 2. Reindirizza a wheelofd.html SOLO SE il nome è valido
+        // 2. Reindirizza a wheelofd.html
         window.location.href = './wheelofd.html';
       } else {
-        // SE IL NOME NON È NELLA LISTA, BLOCCA IL REINDIRIZZAMENTO
+        // Mostra errore se il nome non fa parte dei 24 autorizzati
         errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
         nameInput.value = "";
       }
