@@ -1,1 +1,196 @@
-<h1>hehe</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheel of D</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
+
+    /* Container Principale Responsivo */
+    .game-container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column; /* Layout Mobile (default): dall'alto verso il basso */
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* === ZONA 1: BOX CONCENTRICI === */
+    .concentric-zone {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      max-width: 350px;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Box 1 (Esterno) */
+    .box-outer {
+      width: 100%;
+      height: 100%;
+      border: 2px solid #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #0a0a0a;
+    }
+
+    /* Box 2 (Intermedio) */
+    .box-middle {
+      width: 100%;
+      height: 100%;
+      border: 2px dashed #888888;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #111111;
+    }
+
+    /* Box 3 (Interno) */
+    .box-inner {
+      width: 100%;
+      height: 100%;
+      border: 2px solid #444444;
+      border-radius: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #1a1a1a;
+      overflow: hidden;
+    }
+
+    .box-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* === ZONA 2: GRIGLIA 3x3 === */
+    .grid-zone {
+      width: 100%;
+      max-width: 450px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 12px;
+      aspect-ratio: 1 / 1;
+    }
+
+    .grid-item {
+      background-color: #111111;
+      border: 1px solid #333333;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .grid-item:hover {
+      border-color: #ffffff;
+      transform: scale(1.02);
+    }
+
+    .grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* === DESKTOP / TABLET (Schermi > 768px) === */
+    @media (min-width: 768px) {
+      .game-container {
+        flex-direction: row; /* Layout PC: affiancato Sinistra/Destra */
+        justify-content: center;
+        align-items: center;
+        gap: 60px;
+        padding-top: 20px;
+      }
+
+      .concentric-zone, .grid-zone {
+        max-width: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="player-welcome">Wheel of D</h1>
+  </header>
+
+  <main class="game-container">
+    
+    <!-- ZONA CONCENTRICA (Sinistra su PC / Sopra su Mobile) -->
+    <section class="concentric-zone">
+      <div class="box-outer">
+        <div class="box-middle">
+          <div class="box-inner" id="target-box">
+            <!-- Immagine di destinazione/centrale -->
+            <span style="color: #666; font-size: 0.8rem;">Box Interno</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ZONA GRIGLIA 3x3 (Destra su PC / Sotto su Mobile) -->
+    <section class="grid-zone">
+      <div class="grid-item"><span style="color: #444;">1</span></div>
+      <div class="grid-item"><span style="color: #444;">2</span></div>
+      <div class="grid-item"><span style="color: #444;">3</span></div>
+      <div class="grid-item"><span style="color: #444;">4</span></div>
+      <div class="grid-item"><span style="color: #444;">5</span></div>
+      <div class="grid-item"><span style="color: #444;">6</span></div>
+      <div class="grid-item"><span style="color: #444;">7</span></div>
+      <div class="grid-item"><span style="color: #444;">8</span></div>
+      <div class="grid-item"><span style="color: #444;">9</span></div>
+    </section>
+
+  </main>
+
+  <script>
+    // Recupera il nome salvato nella pagina di login
+    const playerName = sessionStorage.getItem('playerName');
+
+    if (playerName) {
+      document.getElementById('player-welcome').textContent = `Sfida per ${playerName}`;
+    }
+  </script>
+
+</body>
+</html>
