@@ -517,21 +517,30 @@
     document.getElementById('reopen-msg-btn').addEventListener('click', openModal);
 
     function checkCompletionState() {
-      if (unlockedTiles.every(t => t === true)) {
-        document.getElementById('grid-zone').classList.add('completed');
-        document.getElementById('reopen-msg-btn').classList.add('show');
+        if (unlockedTiles.every(t => t === true)) {
+            document.getElementById('grid-zone').classList.add('completed');
+            document.getElementById('reopen-msg-btn').classList.add('show');
 
-        const rawName = sessionStorage.getItem('playerName') || '';
-        const normalizedKey = rawName.toLowerCase().trim();
-        const customMessage = personalMessages[normalizedKey] || defaultMessage;
+            // 1. Recupera il nome salvato (se manca usa playerName)
+            const rawName = sessionStorage.getItem('playerName') || playerName || '';
+            
+            // 2. Normalizza la chiave (minuscolo, senza spazi ai bordi)
+            const normalizedKey = rawName.toLowerCase().trim();
+            
+            // 3. Cerca il messaggio personalizzato
+            const customMessage = personalMessages[normalizedKey] || defaultMessage;
 
-        document.getElementById('final-modal-title').textContent = rawName ? `Complimenti ${rawName}!` : "Complimenti!";
-        document.getElementById('final-modal-message').textContent = customMessage;
+            // 4. Popola e mostra il modal
+            document.getElementById('final-modal-title').textContent = (rawName && rawName !== 'Giocatore') 
+            ? `Complimenti ${rawName}!` 
+            : "Complimenti!";
+            
+            document.getElementById('final-modal-message').textContent = customMessage;
 
-        setTimeout(() => {
-          openModal();
-        }, 1200);
-      }
+            setTimeout(() => {
+            openModal();
+            }, 1200);
+        }
     }
 
     function loadProgress() {
