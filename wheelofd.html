@@ -239,6 +239,63 @@
       animation: tileGlow 1.8s ease-out forwards;
     }
 
+    /* === MODAL FINALE === */
+    .final-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      padding: 25px;
+      text-align: center;
+    }
+
+    .final-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .final-modal-content {
+      background-color: #111111;
+      border: 1px solid #333333;
+      border-radius: 12px;
+      padding: 30px 25px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.15);
+      animation: modalPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes modalPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .final-modal h2 {
+      font-size: 1.8rem;
+      color: #00ff88;
+      margin-bottom: 15px;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+
+    .final-modal p {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: #dddddd;
+      white-space: pre-line;
+    }
+
     @media (min-width: 768px) {
       .game-container {
         flex-direction: row;
@@ -298,14 +355,50 @@
 
   </main>
 
+  <!-- Modal Finale Personalizzato -->
+  <div class="final-modal" id="final-modal">
+    <div class="final-modal-content">
+      <h2 id="final-modal-title">Complimenti!</h2>
+      <p id="final-modal-message"></p>
+    </div>
+  </div>
+
   <script>
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
+
+    // MESSAGGI PERSONALIZZATI PER OGNI INVITATO/A
+    const personalMessages = {
+      "salvo": "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
+      "salvatore": "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
+      "matte": "Ué Matte agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
+      "matteo": "Ué Matte agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
+      "nino": "Bravo NiNuzzo, beddu figghiu miu, ora entra",
+      "rocco": "Bravo NiNuzzo, beddu figghiu miu, ora entra",
+      "elia": "Signore dell'inganno, non si è fatto ingannare da tutto ciò, le è concesso l'accesso",
+      "giovanni": "Signor G, BEH!? Pensavi sarebbe stato più difficile, quando entri non esordire con un frociosculo possibilmente",
+      "riccardo": "Bravo Ricky Montanane, ora puoi entrare col QR Code, ti aspettiamo Richard Mountainbike",
+      "alberto": "Albuuuuuuuuuu, entra dai ricchionazzo bastardo",
+      "diego": "Da grandi ruote da girare derivano grandi gruppi in cui entrare, muovi il culo Diego",
+      "amelie": "Brava Amebella, so che a Campotto tecnologie così non ne avete, temevo ti tirassi indietro",
+      "tommaso": "Tommy Immommy, quando compare un QR code queste persone gentili e per bene, si sbranano il pene",
+      "antonio": "Antotna, scansiona il QR bidone che non sei altro, Bidonanto",
+      "anto": "Antotna, scansiona il QR bidone che non sei altro, Bidonanto",
+      "neno": "Daje Neno, non penso ti dispiacerà se per una sera ti distraggo dai tuoi pomodori o dallo studio di mazzette IV",
+      "stefano": "Daje Neno, non penso ti dispiacerà se per una sera ti distraggo dai tuoi pomodori o dallo studio di mazzette IV",
+      "enrico": "Lo Scassone, cosa fai non entri, sarai felice di sapere che c'è anche Babbuz Nataluz",
+      "alessio": "Dai Bimba, ci hai messo anche troppo per sto giochino ora entra nel gruppo babbuz di minchiaz",
+      "luca": "Sugar, non penso tu ne abbia mai fatti di questi a meccanica, quindi direi che per essere la tua prima volta non te la sei cavatam male",
+      "giova": "Sugar, non penso tu ne abbia mai fatti di questi a meccanica, quindi direi che per essere la tua prima volta non te la sei cavatam male",
+      "marco": "Complimenti vicino, ora puoi entrare nel gruppo scansionando il codice",
+      "fabio": "Polissimo, dottore, esimio, collega (alla lontana), scansioni il codice QR adesso e non perda altro tempo",
+      "silvia": "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
+    };
 
     // 8 DESCRIZIONI
     const symbolDescriptions = [
       "Saturno",
       "Una barca sotto sopra",
-      "Il grande carro",
+      "Il grande, carro",
       "Sotto sopra, un indizio per un altro simbolo",
       "Una E un po' particolare, chi sa sa...",
       "L'occhio di Horus",
@@ -328,6 +421,7 @@
     let isLockedForAnimation = false;
     let pauseTimer = null;
 
+    // Tracciamo quali tasselli della griglia (da 0 a 8) sono stati sbloccati
     let unlockedTiles = [false, false, false, false, false, false, false, false, false];
 
     // Imposta la ruota esterna inizialmente a 90°
@@ -350,6 +444,17 @@
     function checkCompletionState() {
       if (unlockedTiles.every(t => t === true)) {
         document.getElementById('grid-zone').classList.add('completed');
+
+        const rawName = sessionStorage.getItem('playerName') || '';
+        const normalizedKey = rawName.toLowerCase().trim();
+        const customMessage = personalMessages[normalizedKey] || defaultMessage;
+
+        document.getElementById('final-modal-title').textContent = rawName ? `Complimenti ${rawName}!` : "Complimenti!";
+        document.getElementById('final-modal-message').textContent = customMessage;
+
+        setTimeout(() => {
+          document.getElementById('final-modal').classList.add('show');
+        }, 1200);
       }
     }
 
@@ -569,7 +674,7 @@
           if (tileEl) tileEl.classList.remove('flash-unlock');
         });
 
-        // Controlla se la griglia è stata completata per unificare le immagini
+        // Controlla se la griglia è stata completata per unificare le immagini e mostrare il modal
         checkCompletionState();
 
         isLockedForAnimation = false;
