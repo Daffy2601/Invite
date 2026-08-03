@@ -91,7 +91,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: border-color 0.3s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: border-color 0.3s ease, transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
       touch-action: none;
       overflow: hidden;
     }
@@ -336,7 +336,7 @@
     let currentStage = 0;
     const snapTolerance = 1;
     let isLockedForAnimation = false;
-    let pauseTimer = null; // Timer per attendere 1 secondo di inattività
+    let pauseTimer = null;
 
     let ringsState = {
       outer: 0,
@@ -392,53 +392,63 @@
       return diff > 180 ? 360 - diff : diff;
     }
 
+    // Verifica la fase relativa tra i cerchi attivi e restituisce i target angolari assoluti per lo snap
     function checkRelativeAlignment() {
       if (currentStage >= 9) return null;
 
       const target = targetAngles[currentStage];
-      
-      let baseKey = null;
-      if (target.outer !== 666) baseKey = 'outer';
-      else if (target.middle !== 666) baseKey = 'middle';
-      else if (target.inner !== 666) baseKey = 'inner';
+      const activeKeys = ['outer', 'middle', 'inner'].filter(k => target[k] !== 666);
 
-      if (!baseKey) return null;
+      if (activeKeys.length === 0) return null;
 
-      const currentBaseAngle = ringsState[baseKey];
+      // Se c'è solo un cerchio attivo per il simbolo
+      if (activeKeys.length === 1) {
+        const key = activeKeys[0];
+        if (angleDiff(ringsState[key], target[key]) <= snapTolerance) {
+          let nextState = { ...ringsState };
+          nextState[key] = normalizeAngle(target[key]);
+          return nextState;
+        }
+        return null;
+      }
+
+      // Se ci sono più cerchi attivi: controlliamo se le relative differenze rispecchiano la combinazione target
+      const baseKey = activeKeys[0];
+      const userBaseAngle = ringsState[baseKey];
       const targetBaseAngle = target[baseKey];
-      const rotationOffset = currentBaseAngle - targetBaseAngle;
+      const rotationOffset = userBaseAngle - targetBaseAngle;
 
-      const keys = ['outer', 'middle', 'inner'];
-      let isAligned = true;
-      let idealAngles = { ...ringsState };
+      let isRelativeMatch = true;
 
-      for (let key of keys) {
-        if (target[key] !== 666) {
-          const expectedAngle = normalizeAngle(target[key] + rotationOffset);
-          const currentAngle = normalizeAngle(ringsState[key]);
-          
-          if (angleDiff(currentAngle, expectedAngle) > snapTolerance) {
-            isAligned = false;
-            break;
-          }
-          idealAngles[key] = expectedAngle;
+      for (let i = 1; i < activeKeys.length; i++) {
+        const key = activeKeys[i];
+        const expectedAngle = normalizeAngle(target[key] + rotationOffset);
+        if (angleDiff(ringsState[key], expectedAngle) > snapTolerance) {
+          isRelativeMatch = false;
+          break;
         }
       }
 
-      return isAligned ? idealAngles : null;
+      // Se il simbolo è allineato (anche a +90° o in un'altra direzione), forziamo lo snap agli angoli target definiti
+      if (isRelativeMatch) {
+        let snapState = { ...ringsState };
+        activeKeys.forEach(k => {
+          snapState[k] = normalizeAngle(target[k]);
+        });
+        return snapState;
+      }
+
+      return null;
     }
 
     function scheduleAlignmentCheck() {
-      // Cancella eventuale timer precedente se la ruota viene ancora mossa
       if (pauseTimer) clearTimeout(pauseTimer);
-
       if (isLockedForAnimation || currentStage >= 9) return;
 
-      // Avvia un timer di 1 secondo (1000ms) di immobilità prima dello snap
       pauseTimer = setTimeout(() => {
-        const idealAngles = checkRelativeAlignment();
-        if (idealAngles) {
-          triggerUnlockSequence(idealAngles);
+        const snapAngles = checkRelativeAlignment();
+        if (snapAngles) {
+          triggerUnlockSequence(snapAngles);
         }
       }, 1000);
     }
@@ -463,7 +473,6 @@
         isDragging = true;
         ringEl.classList.add('dragging');
         
-        // Cancella il timer se l'utente inizia a muovere
         if (pauseTimer) clearTimeout(pauseTimer);
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -485,7 +494,6 @@
         ringsState[ringKey] = newRotation;
         ringEl.style.transform = `rotate(${newRotation}deg)`;
 
-        // Ad ogni movimento programma il controllo a 1 secondo di inattività
         scheduleAlignmentCheck();
       }
 
@@ -495,7 +503,6 @@
         ringEl.classList.remove('dragging');
 
         saveProgress();
-        // Programma il controllo anche al rilascio del mouse/dito
         scheduleAlignmentCheck();
       }
 
@@ -508,21 +515,25 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    function triggerUnlockSequence(idealAngles) {
+    function triggerUnlockSequence(snapAngles) {
       isLockedForAnimation = true;
 
-      ringsState = idealAngles;
+      // 1. Snap dolce sui cerchi attivi portandoli agli angoli target corretti per quel simbolo
+      ringsState = snapAngles;
       document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
       document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
       document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
 
+      // 2. Feedback bordi verdi
       document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
 
+      // 3. Testo simbolo sbloccato
       const feedbackEl = document.getElementById('symbol-feedback');
       const completedSymbolNumber = currentStage + 1;
       feedbackEl.textContent = `✦ Simbolo ${completedSymbolNumber} Allineato! ✦`;
       feedbackEl.classList.add('show');
 
+      // 4. Mostra il pezzo di QR code nella griglia 3x3
       const tileEl = document.getElementById(`tile-${currentStage}`);
       if (tileEl) {
         tileEl.classList.add('unlocked', 'flash-unlock');
@@ -532,6 +543,7 @@
       document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
       saveProgress();
 
+      // Reset dopo 2 secondi
       setTimeout(() => {
         document.getElementById('ring-outer').style.borderColor = '#333333';
         document.getElementById('ring-middle').style.borderColor = '#555555';
