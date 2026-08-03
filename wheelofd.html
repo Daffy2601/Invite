@@ -331,7 +331,6 @@
       background-color: #00ff88;
     }
 
-    /* Pulsante per riaprire il messaggio dopo averlo chiuso */
     .reopen-msg-btn {
       display: none;
       margin-top: 15px;
@@ -425,10 +424,9 @@
   </div>
 
   <script>
-    // Recupera parametri dall'URL
+    // Recupera parametro 'user' dall'URL
     const urlParams = new URLSearchParams(window.location.search);
     const userPrime = parseInt(urlParams.get('user'), 10);
-    const urlName = urlParams.get('name') || '';
 
     // MESSAGGI INDICIZZATI TRAMITE NUMERI PRIMI
     const primeMessages = {
@@ -452,7 +450,7 @@
       313: "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
     };
 
-    // CONTROLLO FICCANASO: se il parametro 'user' manca o non è uno dei primi autorizzati
+    // CONTROLLO FICCANASO
     if (!userPrime || !primeMessages.hasOwnProperty(userPrime)) {
       window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('final-modal-title').textContent = "Alt!";
@@ -472,7 +470,7 @@
       });
     }
 
-    const playerName = urlName || sessionStorage.getItem('playerName') || 'Giocatore';
+    const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
 
     // 8 DESCRIZIONI
     const symbolDescriptions = [
@@ -488,7 +486,7 @@
 
     const targetAngles = [
       { outer: 93.453,  middle: 0.310757, inner: 666 },
-      { outer: 0,       middle: 176.602,  inner: 336.852 }, // Simbolo 2 (Complesso: sblocca tile-1 e tile-4)
+      { outer: 0,       middle: 176.602,  inner: 336.852 },
       { outer: 95.2604, middle: 220.739,  inner: 72.4342 },
       { outer: 260.7,   middle: 2.43437,  inner: 666 },
       { outer: 310.957, middle: 40.0678,  inner: 666 },

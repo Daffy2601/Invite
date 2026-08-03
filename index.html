@@ -145,8 +145,8 @@
         const userPrime = userMap[normalizedName];
         sessionStorage.setItem('playerName', rawName);
         
-        // Reindirizza con il numero primo come parametro URL
-        window.location.href = `./wheelofd.html?user=${userPrime}&name=${encodeURIComponent(rawName)}`;
+        // Reindirizza passando solo il parametro user
+        window.location.href = `./wheelofd.html?user=${userPrime}`;
       } else {
         errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
         nameInput.value = "";
