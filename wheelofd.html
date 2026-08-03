@@ -151,7 +151,6 @@
       transform: translateY(0);
     }
 
-    /* === GRIGLIA QR CODE === */
     .grid-zone {
       width: 90vw;
       max-width: 440px;
@@ -206,7 +205,6 @@
       border: none;
     }
 
-    /* === STILE COMPATTATO A FINE GIOCO === */
     .grid-zone.completed {
       gap: 0;
       padding: 0;
@@ -239,7 +237,6 @@
       animation: tileGlow 1.8s ease-out forwards;
     }
 
-    /* === MODAL FINALE === */
     .final-modal {
       position: fixed;
       top: 0;
@@ -413,7 +410,6 @@
 
   </main>
 
-  <!-- Modal Finale Personalizzato / Alert Ficcanaso -->
   <div class="final-modal" id="final-modal">
     <div class="final-modal-content">
       <button class="close-btn" id="close-modal-x">&times;</button>
@@ -424,11 +420,9 @@
   </div>
 
   <script>
-    // Recupera parametro 'user' dall'URL
     const urlParams = new URLSearchParams(window.location.search);
     const userPrime = parseInt(urlParams.get('user'), 10);
 
-    // MESSAGGI INDICIZZATI TRAMITE NUMERI PRIMI
     const primeMessages = {
       3: "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
       13: "Ué Matté agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
@@ -450,7 +444,6 @@
       313: "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
     };
 
-    // CONTROLLO FICCANASO
     if (!userPrime || !primeMessages.hasOwnProperty(userPrime)) {
       window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('final-modal-title').textContent = "Alt!";
@@ -472,7 +465,6 @@
 
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
 
-    // 8 DESCRIZIONI
     const symbolDescriptions = [
       "Saturno",
       "Una barca sotto sopra",

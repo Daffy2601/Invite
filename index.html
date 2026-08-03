@@ -103,7 +103,6 @@
     const nameInput = document.getElementById('guest-name');
     const errorMsg = document.getElementById('error-msg');
 
-    // Mappa Nomi -> Numeri primi che finiscono in 3
     const userMap = {
       "salvo": 3,
       "salvatore": 3,
@@ -145,7 +144,6 @@
         const userPrime = userMap[normalizedName];
         sessionStorage.setItem('playerName', rawName);
         
-        // Reindirizza passando solo il parametro user
         window.location.href = `./wheelofd.html?user=${userPrime}`;
       } else {
         errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
