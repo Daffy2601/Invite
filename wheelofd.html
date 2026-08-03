@@ -266,19 +266,37 @@
     }
 
     .final-modal-content {
+      position: relative;
       background-color: #111111;
       border: 1px solid #333333;
       border-radius: 12px;
-      padding: 30px 25px;
+      padding: 35px 25px 25px 25px;
       max-width: 450px;
       width: 100%;
-      box-shadow: 0 0 30px rgba(0, 255, 136, 0.15);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
       animation: modalPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes modalPop {
       0% { transform: scale(0.8); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      color: #aaaaaa;
+      font-size: 1.6rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    .close-btn:hover {
+      color: #00ff88;
     }
 
     .final-modal h2 {
@@ -294,6 +312,46 @@
       line-height: 1.5;
       color: #dddddd;
       white-space: pre-line;
+      margin-bottom: 25px;
+    }
+
+    .modal-action-btn {
+      background-color: #ffffff;
+      color: #000000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .modal-action-btn:hover {
+      background-color: #00ff88;
+    }
+
+    /* Pulsante per riaprire il messaggio dopo averlo chiuso */
+    .reopen-msg-btn {
+      display: none;
+      margin-top: 15px;
+      background: transparent;
+      border: 1px solid #333333;
+      color: #aaaaaa;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .reopen-msg-btn.show {
+      display: inline-block;
+    }
+
+    .reopen-msg-btn:hover {
+      border-color: #00ff88;
+      color: #00ff88;
     }
 
     @media (min-width: 768px) {
@@ -339,6 +397,7 @@
       </section>
 
       <div id="symbol-feedback" class="symbol-feedback"></div>
+      <button id="reopen-msg-btn" class="reopen-msg-btn">Rileggi il tuo messaggio</button>
     </div>
 
     <section class="grid-zone" id="grid-zone">
@@ -358,8 +417,10 @@
   <!-- Modal Finale Personalizzato -->
   <div class="final-modal" id="final-modal">
     <div class="final-modal-content">
+      <button class="close-btn" id="close-modal-x">&times;</button>
       <h2 id="final-modal-title">Complimenti!</h2>
       <p id="final-modal-message"></p>
+      <button class="modal-action-btn" id="close-modal-btn">Chiudi e vedi QR</button>
     </div>
   </div>
 
@@ -393,6 +454,8 @@
       "fabio": "Polissimo, dottore, esimio, collega (alla lontana), scansioni il codice QR adesso e non perda altro tempo",
       "silvia": "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
     };
+
+    const defaultMessage = "Complimenti! Hai dimostrato grande abilità nel ricomporre il codice segreto.";
 
     // 8 DESCRIZIONI
     const symbolDescriptions = [
@@ -441,9 +504,22 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
     }
 
+    function closeModal() {
+      document.getElementById('final-modal').classList.remove('show');
+    }
+
+    function openModal() {
+      document.getElementById('final-modal').classList.add('show');
+    }
+
+    document.getElementById('close-modal-x').addEventListener('click', closeModal);
+    document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+    document.getElementById('reopen-msg-btn').addEventListener('click', openModal);
+
     function checkCompletionState() {
       if (unlockedTiles.every(t => t === true)) {
         document.getElementById('grid-zone').classList.add('completed');
+        document.getElementById('reopen-msg-btn').classList.add('show');
 
         const rawName = sessionStorage.getItem('playerName') || '';
         const normalizedKey = rawName.toLowerCase().trim();
@@ -453,7 +529,7 @@
         document.getElementById('final-modal-message').textContent = customMessage;
 
         setTimeout(() => {
-          document.getElementById('final-modal').classList.add('show');
+          openModal();
         }, 1200);
       }
     }
