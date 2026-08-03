@@ -151,6 +151,7 @@
       transform: translateY(0);
     }
 
+    /* === GRIGLIA QR CODE === */
     .grid-zone {
       width: 90vw;
       max-width: 440px;
@@ -163,6 +164,7 @@
       padding: 6px;
       border: 2px solid #333333;
       border-radius: 8px;
+      transition: gap 0.5s ease, padding 0.5s ease, border-color 0.5s ease, background-color 0.5s ease;
     }
 
     .grid-tile {
@@ -174,7 +176,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: box-shadow 0.4s ease, border-color 0.4s ease;
+      transition: box-shadow 0.4s ease, border-color 0.4s ease, border-radius 0.5s ease;
     }
 
     .grid-tile span {
@@ -202,6 +204,20 @@
 
     .grid-tile.unlocked {
       border: none;
+    }
+
+    /* === STILE COMPATTATO A FINE GIOCO === */
+    .grid-zone.completed {
+      gap: 0;
+      padding: 0;
+      border: none;
+      background-color: transparent;
+    }
+
+    .grid-zone.completed .grid-tile {
+      border: none;
+      border-radius: 0;
+      background-color: transparent;
     }
 
     @keyframes tileGlow {
@@ -268,7 +284,7 @@
       <div id="symbol-feedback" class="symbol-feedback"></div>
     </div>
 
-    <section class="grid-zone">
+    <section class="grid-zone" id="grid-zone">
       <div class="grid-tile" id="tile-0"><span>1</span><img src="qr1.jpeg" alt="QR 1"></div>
       <div class="grid-tile" id="tile-1"><span>2</span><img src="qr2.jpeg" alt="QR 2"></div>
       <div class="grid-tile" id="tile-2"><span>3</span><img src="qr3.jpeg" alt="QR 3"></div>
@@ -286,11 +302,11 @@
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
     document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
 
-    // 8 DESCRIZIONI (Il Simbolo 2 sbloccando 2 pezzi fa avanzare il percorso con 8 combinazioni totali)
+    // 8 DESCRIZIONI
     const symbolDescriptions = [
       "Saturno",
       "Una barca sotto sopra",
-      "Il grande, carro",
+      "Il grande carro",
       "Sotto sopra, un indizio per un altro simbolo",
       "Una E un po' particolare, chi sa sa...",
       "L'occhio di Horus",
@@ -313,11 +329,11 @@
     let isLockedForAnimation = false;
     let pauseTimer = null;
 
-    // Tracciamo quali tasselli della griglia (da 0 a 8) sono stati sbloccati
     let unlockedTiles = [false, false, false, false, false, false, false, false, false];
 
+    // Imposta la ruota esterna inizialmente a 90°
     let ringsState = {
-      outer: 0,
+      outer: 90,
       middle: 0,
       inner: 0
     };
@@ -332,13 +348,19 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
     }
 
+    function checkCompletionState() {
+      if (unlockedTiles.every(t => t === true)) {
+        document.getElementById('grid-zone').classList.add('completed');
+      }
+    }
+
     function loadProgress() {
       const rawSave = localStorage.getItem(STORAGE_KEY);
       if (rawSave) {
         try {
           const saveData = JSON.parse(rawSave);
           unlockedTiles = saveData.unlockedTiles || [false, false, false, false, false, false, false, false, false];
-          ringsState = saveData.ringsState || { outer: 0, middle: 0, inner: 0 };
+          ringsState = saveData.ringsState || { outer: 90, middle: 0, inner: 0 };
 
           let count = 0;
           unlockedTiles.forEach((isUnlocked, index) => {
@@ -350,14 +372,17 @@
           });
 
           document.getElementById('current-stage').textContent = count;
-
-          document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
-          document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
-          document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
         } catch (e) {
           console.error("Errore caricamento progressi:", e);
         }
       }
+
+      // Applica la rotazione corrente agli anelli (di default outer parte a 90°)
+      document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
+      document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
+      document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
+
+      checkCompletionState();
     }
 
     function normalizeAngle(angle) {
@@ -370,25 +395,22 @@
       return diff > 180 ? 360 - diff : diff;
     }
 
-    // Restituisce le caselle della griglia associate a ciascuna delle 8 combinazioni
     function getTilesForCombo(comboIdx) {
-      if (comboIdx === 1) { // Simbolo 2 -> sblocca QR2 (tile-1) e QR5 (tile-4)
+      if (comboIdx === 1) {
         return [1, 4];
-      } else if (comboIdx > 1) { // Mappatura per i simboli successivi al secondo
+      } else if (comboIdx > 1) {
         const map = { 2: 2, 3: 3, 4: 5, 5: 6, 6: 7, 7: 8 };
         return [map[comboIdx]];
       }
-      return [0]; // Simbolo 1 -> tile-0
+      return [0];
     }
 
-    // Controlla le combinazioni non ancora sbloccate
     function checkRelativeAlignment() {
       if (unlockedTiles.every(t => t === true)) return null;
 
       for (let comboIdx = 0; comboIdx < targetAngles.length; comboIdx++) {
         const associatedTiles = getTilesForCombo(comboIdx);
         
-        // Se tutti i tasselli associati a questa combinazione sono già sbloccati, la saltiamo
         if (associatedTiles.every(tIdx => unlockedTiles[tIdx])) continue;
 
         const target = targetAngles[comboIdx];
@@ -510,27 +532,22 @@
     function triggerUnlockSequence(comboIdx, snapAngles) {
       isLockedForAnimation = true;
 
-      // Segniamo come sbloccati i tasselli della griglia associati
       const associatedTiles = getTilesForCombo(comboIdx);
       associatedTiles.forEach(tIdx => {
         unlockedTiles[tIdx] = true;
       });
 
-      // 1. Snap dolce sui cerchi interessati
       ringsState = snapAngles;
       document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
       document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
       document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
 
-      // 2. Feedback bordi verdi
       document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
 
-      // 3. Descrizione personalizzata sotto la ruota
       const feedbackEl = document.getElementById('symbol-feedback');
       feedbackEl.textContent = symbolDescriptions[comboIdx];
       feedbackEl.classList.add('show');
 
-      // 4. Mostra le caselle corrispondenti nella griglia
       associatedTiles.forEach(tIdx => {
         const tileEl = document.getElementById(`tile-${tIdx}`);
         if (tileEl) {
@@ -542,7 +559,6 @@
       document.getElementById('current-stage').textContent = totalUnlocked;
       saveProgress();
 
-      // Sblocco dopo 2 secondi
       setTimeout(() => {
         document.getElementById('ring-outer').style.borderColor = '#333333';
         document.getElementById('ring-middle').style.borderColor = '#555555';
@@ -553,6 +569,9 @@
           const tileEl = document.getElementById(`tile-${tIdx}`);
           if (tileEl) tileEl.classList.remove('flash-unlock');
         });
+
+        // Controlla se la griglia è stata completata per unificare le immagini
+        checkCompletionState();
 
         isLockedForAnimation = false;
       }, 2000);
