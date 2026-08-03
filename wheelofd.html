@@ -52,7 +52,6 @@
       gap: 30px;
     }
 
-    /* === ZONA 1: CERCHI CONCENTRICI ROTANTI === */
     .wheel-zone {
       position: relative;
       width: 90vw;
@@ -64,7 +63,6 @@
       margin: 0 auto;
     }
 
-    /* Indicatore di allineamento (Freccia in alto ore 12) */
     .alignment-marker {
       position: absolute;
       top: -15px;
@@ -87,22 +85,20 @@
       justify-content: center;
       align-items: center;
       transition: border-color 0.2s ease;
-      touch-action: none; /* Impedisce lo scroll durante il drag touch */
+      touch-action: none;
     }
 
     .wheel-ring:active {
       cursor: grabbing;
     }
 
-    /* Anello Esterno */
     .ring-outer {
       width: 100%;
       height: 100%;
       border: 3px solid #333333;
       z-index: 1;
     }
-
-    /* Anello Intermedio */
+    
     .ring-middle {
       width: 68%;
       height: 68%;
@@ -110,7 +106,6 @@
       z-index: 2;
     }
 
-    /* Anello Interno */
     .ring-inner {
       width: 36%;
       height: 36%;
@@ -118,7 +113,6 @@
       z-index: 3;
     }
 
-    /* Immagini trasparenti dei cerchi ritagliati */
     .ring-img {
       width: 100%;
       height: 100%;
@@ -127,7 +121,6 @@
       pointer-events: none;
     }
 
-    /* === ZONA 2: GRIGLIA 3x3 (QR Code) === */
     .grid-zone {
       width: 90vw;
       max-width: 440px;
@@ -180,7 +173,6 @@
       border: none;
     }
 
-    /* Messaggio di successo */
     .success-modal {
       position: fixed;
       top: 0;
@@ -211,10 +203,9 @@
       margin-bottom: 15px;
     }
 
-    /* === DESKTOP (Schermi > 768px) === */
     @media (min-width: 768px) {
       .game-container {
-        flex-direction: row; /* PC: Affiancati Sinistra / Destra */
+        flex-direction: row;
         justify-content: center;
         align-items: center;
         gap: 60px;
