@@ -286,13 +286,12 @@
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
     document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
 
-    // 9 DESCRIZIONI PERSONALIZZATE PER OGNI SIMBOLO
+    // 8 DESCRIZIONI (Il Simbolo 2 sbloccando 2 pezzi fa avanzare il percorso con 8 combinazioni totali)
     const symbolDescriptions = [
       "Saturno",
       "Una barca sotto sopra",
       "Il grande carro",
       "Sotto sopra, un indizio per un altro simbolo",
-      "",
       "Una E un po' particolare, chi sa sa...",
       "L'occhio di Horus",
       "Una piuma",
@@ -301,10 +300,9 @@
 
     const targetAngles = [
       { outer: 93.453,  middle: 0.310757, inner: 666 },
-      { outer: 0,       middle: 176.602,  inner: 336.852 },
+      { outer: 0,       middle: 176.602,  inner: 336.852 }, // Simbolo 2 (Complesso: sblocca tile-1 e tile-4)
       { outer: 95.2604, middle: 220.739,  inner: 72.4342 },
       { outer: 260.7,   middle: 2.43437,  inner: 666 },
-      { outer: 0,       middle: 176.602,  inner: 336.852 },
       { outer: 310.957, middle: 40.0678,  inner: 666 },
       { outer: 666,     middle: 3.67103,   inner: 245.087 },
       { outer: 344.821, middle: 19.0264,  inner: 666 },
@@ -315,8 +313,8 @@
     let isLockedForAnimation = false;
     let pauseTimer = null;
 
-    // Tracciamo quali tasselli sono stati sbloccati
-    let unlockedStages = [false, false, false, false, false, false, false, false, false];
+    // Tracciamo quali tasselli della griglia (da 0 a 8) sono stati sbloccati
+    let unlockedTiles = [false, false, false, false, false, false, false, false, false];
 
     let ringsState = {
       outer: 0,
@@ -328,7 +326,7 @@
 
     function saveProgress() {
       const saveData = {
-        unlockedStages: unlockedStages,
+        unlockedTiles: unlockedTiles,
         ringsState: ringsState
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
@@ -339,11 +337,11 @@
       if (rawSave) {
         try {
           const saveData = JSON.parse(rawSave);
-          unlockedStages = saveData.unlockedStages || [false, false, false, false, false, false, false, false, false];
+          unlockedTiles = saveData.unlockedTiles || [false, false, false, false, false, false, false, false, false];
           ringsState = saveData.ringsState || { outer: 0, middle: 0, inner: 0 };
 
           let count = 0;
-          unlockedStages.forEach((isUnlocked, index) => {
+          unlockedTiles.forEach((isUnlocked, index) => {
             if (isUnlocked) {
               const tileEl = document.getElementById(`tile-${index}`);
               if (tileEl) tileEl.classList.add('unlocked');
@@ -372,15 +370,28 @@
       return diff > 180 ? 360 - diff : diff;
     }
 
-    // Controlla TUTTI i simboli non ancora sbloccati (permette l'ordine libero)
+    // Restituisce le caselle della griglia associate a ciascuna delle 8 combinazioni
+    function getTilesForCombo(comboIdx) {
+      if (comboIdx === 1) { // Simbolo 2 -> sblocca QR2 (tile-1) e QR5 (tile-4)
+        return [1, 4];
+      } else if (comboIdx > 1) { // Mappatura per i simboli successivi al secondo
+        const map = { 2: 2, 3: 3, 4: 5, 5: 6, 6: 7, 7: 8 };
+        return [map[comboIdx]];
+      }
+      return [0]; // Simbolo 1 -> tile-0
+    }
+
+    // Controlla le combinazioni non ancora sbloccate
     function checkRelativeAlignment() {
-      if (unlockedStages.every(stage => stage === true)) return null;
+      if (unlockedTiles.every(t => t === true)) return null;
 
-      for (let stageIdx = 0; stageIdx < targetAngles.length; stageIdx++) {
-        // Salta i simboli già trovati in precedenza
-        if (unlockedStages[stageIdx]) continue;
+      for (let comboIdx = 0; comboIdx < targetAngles.length; comboIdx++) {
+        const associatedTiles = getTilesForCombo(comboIdx);
+        
+        // Se tutti i tasselli associati a questa combinazione sono già sbloccati, la saltiamo
+        if (associatedTiles.every(tIdx => unlockedTiles[tIdx])) continue;
 
-        const target = targetAngles[stageIdx];
+        const target = targetAngles[comboIdx];
         const activeKeys = ['outer', 'middle', 'inner'].filter(k => target[k] !== 666);
 
         if (activeKeys.length === 0) continue;
@@ -415,7 +426,7 @@
           activeKeys.forEach(k => {
             snapState[k] = normalizeAngle(target[k]);
           });
-          return { stageIdx: stageIdx, snapAngles: snapState };
+          return { comboIdx: comboIdx, snapAngles: snapState };
         }
       }
 
@@ -424,12 +435,12 @@
 
     function scheduleAlignmentCheck() {
       if (pauseTimer) clearTimeout(pauseTimer);
-      if (isLockedForAnimation || unlockedStages.every(stage => stage === true)) return;
+      if (isLockedForAnimation || unlockedTiles.every(t => t === true)) return;
 
       pauseTimer = setTimeout(() => {
         const result = checkRelativeAlignment();
         if (result) {
-          triggerUnlockSequence(result.stageIdx, result.snapAngles);
+          triggerUnlockSequence(result.comboIdx, result.snapAngles);
         }
       }, 1000);
     }
@@ -450,7 +461,7 @@
       }
 
       function onStart(e) {
-        if (isLockedForAnimation || unlockedStages.every(stage => stage === true)) return;
+        if (isLockedForAnimation || unlockedTiles.every(t => t === true)) return;
         isDragging = true;
         ringEl.classList.add('dragging');
         
@@ -496,9 +507,14 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    function triggerUnlockSequence(stageIdx, snapAngles) {
+    function triggerUnlockSequence(comboIdx, snapAngles) {
       isLockedForAnimation = true;
-      unlockedStages[stageIdx] = true;
+
+      // Segniamo come sbloccati i tasselli della griglia associati
+      const associatedTiles = getTilesForCombo(comboIdx);
+      associatedTiles.forEach(tIdx => {
+        unlockedTiles[tIdx] = true;
+      });
 
       // 1. Snap dolce sui cerchi interessati
       ringsState = snapAngles;
@@ -511,16 +527,18 @@
 
       // 3. Descrizione personalizzata sotto la ruota
       const feedbackEl = document.getElementById('symbol-feedback');
-      feedbackEl.textContent = symbolDescriptions[stageIdx];
+      feedbackEl.textContent = symbolDescriptions[comboIdx];
       feedbackEl.classList.add('show');
 
-      // 4. Mostra la casella corrispondente nella griglia (stageIdx)
-      const tileEl = document.getElementById(`tile-${stageIdx}`);
-      if (tileEl) {
-        tileEl.classList.add('unlocked', 'flash-unlock');
-      }
+      // 4. Mostra le caselle corrispondenti nella griglia
+      associatedTiles.forEach(tIdx => {
+        const tileEl = document.getElementById(`tile-${tIdx}`);
+        if (tileEl) {
+          tileEl.classList.add('unlocked', 'flash-unlock');
+        }
+      });
 
-      const totalUnlocked = unlockedStages.filter(Boolean).length;
+      const totalUnlocked = unlockedTiles.filter(Boolean).length;
       document.getElementById('current-stage').textContent = totalUnlocked;
       saveProgress();
 
@@ -531,7 +549,10 @@
         document.getElementById('ring-inner').style.borderColor = '#888888';
         
         feedbackEl.classList.remove('show');
-        if (tileEl) tileEl.classList.remove('flash-unlock');
+        associatedTiles.forEach(tIdx => {
+          const tileEl = document.getElementById(`tile-${tIdx}`);
+          if (tileEl) tileEl.classList.remove('flash-unlock');
+        });
 
         isLockedForAnimation = false;
       }, 2000);
