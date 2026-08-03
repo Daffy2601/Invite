@@ -55,6 +55,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      width: 100%;
+      max-width: 480px;
     }
 
     .wheel-zone {
@@ -89,13 +91,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: border-color 0.3s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* Snap dolce */
+      transition: border-color 0.3s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
       touch-action: none;
+      overflow: hidden;
     }
 
     .wheel-ring.dragging {
       cursor: grabbing;
-      transition: border-color 0.2s ease; /* Disabilita transizione durante drag */
+      transition: border-color 0.2s ease;
     }
 
     .ring-outer {
@@ -120,14 +123,17 @@
     }
 
     .ring-img {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       border-radius: 50%;
       object-fit: contain;
       pointer-events: none;
+      display: block;
     }
 
-    /* Messaggio sotto la ruota */
     .symbol-feedback {
       margin-top: 15px;
       font-size: 1.1rem;
@@ -198,7 +204,6 @@
       border: none;
     }
 
-    /* Effetto speciale sullo sblocco del tessello */
     @keyframes tileGlow {
       0% {
         box-shadow: 0 0 0px #00ff88;
@@ -278,32 +283,31 @@
         <div class="alignment-marker"></div>
 
         <div class="wheel-ring ring-outer" id="ring-outer">
-          <img src="outer.png" alt="Anello Esterno" class="ring-img" onerror="this.style.display='none'">
+          <img src="outer.png" alt="Anello Esterno" class="ring-img">
         </div>
 
         <div class="wheel-ring ring-middle" id="ring-middle">
-          <img src="middle.png" alt="Anello Intermedio" class="ring-img" onerror="this.style.display='none'">
+          <img src="middle.png" alt="Anello Intermedio" class="ring-img">
         </div>
 
         <div class="wheel-ring ring-inner" id="ring-inner">
-          <img src="inner.png" alt="Anello Interno" class="ring-img" onerror="this.style.display='none'">
+          <img src="inner.png" alt="Anello Interno" class="ring-img">
         </div>
       </section>
 
-      <!-- Feedback grafico testo simbolo -->
       <div id="symbol-feedback" class="symbol-feedback"></div>
     </div>
 
     <section class="grid-zone">
-      <div class="grid-tile" id="tile-0"><span>1</span><img src="qr1.jpeg" alt="QR 1" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-1"><span>2</span><img src="qr2.jpeg" alt="QR 2" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-2"><span>3</span><img src="qr3.jpeg" alt="QR 3" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-3"><span>4</span><img src="qr4.jpeg" alt="QR 4" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-4"><span>5</span><img src="qr5.jpeg" alt="QR 5" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-5"><span>6</span><img src="qr6.jpeg" alt="QR 6" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-6"><span>7</span><img src="qr7.jpeg" alt="QR 7" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-7"><span>8</span><img src="qr8.jpeg" alt="QR 8" onerror="this.style.display='none'"></div>
-      <div class="grid-tile" id="tile-8"><span>9</span><img src="qr9.jpeg" alt="QR 9" onerror="this.style.display='none'"></div>
+      <div class="grid-tile" id="tile-0"><span>1</span><img src="qr1.jpeg" alt="QR 1"></div>
+      <div class="grid-tile" id="tile-1"><span>2</span><img src="qr2.jpeg" alt="QR 2"></div>
+      <div class="grid-tile" id="tile-2"><span>3</span><img src="qr3.jpeg" alt="QR 3"></div>
+      <div class="grid-tile" id="tile-3"><span>4</span><img src="qr4.jpeg" alt="QR 4"></div>
+      <div class="grid-tile" id="tile-4"><span>5</span><img src="qr5.jpeg" alt="QR 5"></div>
+      <div class="grid-tile" id="tile-5"><span>6</span><img src="qr6.jpeg" alt="QR 6"></div>
+      <div class="grid-tile" id="tile-6"><span>7</span><img src="qr7.jpeg" alt="QR 7"></div>
+      <div class="grid-tile" id="tile-7"><span>8</span><img src="qr8.jpeg" alt="QR 8"></div>
+      <div class="grid-tile" id="tile-8"><span>9</span><img src="qr9.jpeg" alt="QR 9"></div>
     </section>
 
   </main>
@@ -317,22 +321,22 @@
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
     document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
 
-    // Configurazione dei 9 simboli (666 indica che il cerchio viene ignorato)
     const targetAngles = [
-      { outer: 93.453,  middle: 0.310757, inner: 666 },       // Simbolo 1
-      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 2
-      { outer: 95.2604, middle: 220.739,  inner: 72.4342 },   // Simbolo 3
-      { outer: 260.7,   middle: 2.43437,  inner: 666 },       // Simbolo 4
-      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 5
-      { outer: 310.957, middle: 40.0678,  inner: 666 },       // Simbolo 6
-      { outer: 666,     middle: 3.67103,   inner: 245.087 },   // Simbolo 7
-      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 8
-      { outer: 174.682, middle: 0.310757, inner: 666 }        // Simbolo 9
+      { outer: 93.453,  middle: 0.310757, inner: 666 },
+      { outer: 0,       middle: 176.602,  inner: 336.852 },
+      { outer: 95.2604, middle: 220.739,  inner: 72.4342 },
+      { outer: 260.7,   middle: 2.43437,  inner: 666 },
+      { outer: 0,       middle: 176.602,  inner: 336.852 },
+      { outer: 310.957, middle: 40.0678,  inner: 666 },
+      { outer: 666,     middle: 3.67103,   inner: 245.087 },
+      { outer: 0,       middle: 176.602,  inner: 336.852 },
+      { outer: 174.682, middle: 0.310757, inner: 666 }
     ];
 
     let currentStage = 0;
-    const snapTolerance = 1; // Tolleranza a 1 grado
-    let isLockedForAnimation = false; // Blocco 2s rotazione
+    const snapTolerance = 1;
+    let isLockedForAnimation = false;
+    let pauseTimer = null; // Timer per attendere 1 secondo di inattività
 
     let ringsState = {
       outer: 0,
@@ -378,25 +382,21 @@
       }
     }
 
-    // Normalizza angolo in intervallo [0, 360)
     function normalizeAngle(angle) {
       let a = angle % 360;
       return a < 0 ? a + 360 : a;
     }
 
-    // Calcola la differenza minima tra due angoli
     function angleDiff(a, b) {
       let diff = Math.abs(normalizeAngle(a) - normalizeAngle(b));
       return diff > 180 ? 360 - diff : diff;
     }
 
-    // --- VERIFICA ALLINEAMENTO RELATIVO ---
     function checkRelativeAlignment() {
       if (currentStage >= 9) return null;
 
       const target = targetAngles[currentStage];
       
-      // Troviamo il primo cerchio attivo (diverso da 666) come riferimento di base
       let baseKey = null;
       if (target.outer !== 666) baseKey = 'outer';
       else if (target.middle !== 666) baseKey = 'middle';
@@ -406,11 +406,8 @@
 
       const currentBaseAngle = ringsState[baseKey];
       const targetBaseAngle = target[baseKey];
-      
-      // Calcoliamo l'offset dinamico di rotazione dell'utente
       const rotationOffset = currentBaseAngle - targetBaseAngle;
 
-      // Verifichiamo se tutti i cerchi attivi rispettano la stessa differenza di fase
       const keys = ['outer', 'middle', 'inner'];
       let isAligned = true;
       let idealAngles = { ...ringsState };
@@ -429,6 +426,21 @@
       }
 
       return isAligned ? idealAngles : null;
+    }
+
+    function scheduleAlignmentCheck() {
+      // Cancella eventuale timer precedente se la ruota viene ancora mossa
+      if (pauseTimer) clearTimeout(pauseTimer);
+
+      if (isLockedForAnimation || currentStage >= 9) return;
+
+      // Avvia un timer di 1 secondo (1000ms) di immobilità prima dello snap
+      pauseTimer = setTimeout(() => {
+        const idealAngles = checkRelativeAlignment();
+        if (idealAngles) {
+          triggerUnlockSequence(idealAngles);
+        }
+      }, 1000);
     }
 
     function setupRingRotation(ringId, ringKey) {
@@ -451,6 +463,9 @@
         isDragging = true;
         ringEl.classList.add('dragging');
         
+        // Cancella il timer se l'utente inizia a muovere
+        if (pauseTimer) clearTimeout(pauseTimer);
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         startAngle = getAngle(clientX, clientY);
@@ -470,8 +485,8 @@
         ringsState[ringKey] = newRotation;
         ringEl.style.transform = `rotate(${newRotation}deg)`;
 
-        // Controllo tempo reale durante il drag
-        verifyAndUnlock();
+        // Ad ogni movimento programma il controllo a 1 secondo di inattività
+        scheduleAlignmentCheck();
       }
 
       function onEnd() {
@@ -480,7 +495,8 @@
         ringEl.classList.remove('dragging');
 
         saveProgress();
-        verifyAndUnlock();
+        // Programma il controllo anche al rilascio del mouse/dito
+        scheduleAlignmentCheck();
       }
 
       ringEl.addEventListener('mousedown', onStart);
@@ -492,35 +508,21 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    function verifyAndUnlock() {
-      if (isLockedForAnimation || currentStage >= 9) return;
-
-      const idealAngles = checkRelativeAlignment();
-
-      if (idealAngles) {
-        triggerUnlockSequence(idealAngles);
-      }
-    }
-
     function triggerUnlockSequence(idealAngles) {
-      isLockedForAnimation = true; // Blocco rotazione per 2 secondi
+      isLockedForAnimation = true;
 
-      // 1. Snap dolce sulle posizioni ideali per i cerchi attivi
       ringsState = idealAngles;
       document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
       document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
       document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
 
-      // 2. Feedback visivo bordi verdi
       document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
 
-      // 3. Mostra testo simbolo sbloccato sotto la ruota
       const feedbackEl = document.getElementById('symbol-feedback');
       const completedSymbolNumber = currentStage + 1;
       feedbackEl.textContent = `✦ Simbolo ${completedSymbolNumber} Allineato! ✦`;
       feedbackEl.classList.add('show');
 
-      // 4. Sblocca la casella corrispondente nella griglia (Simbolo 1 -> Casella 1)
       const tileEl = document.getElementById(`tile-${currentStage}`);
       if (tileEl) {
         tileEl.classList.add('unlocked', 'flash-unlock');
@@ -530,7 +532,6 @@
       document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
       saveProgress();
 
-      // Reset dopo 2 secondi (sblocco controlli)
       setTimeout(() => {
         document.getElementById('ring-outer').style.borderColor = '#333333';
         document.getElementById('ring-middle').style.borderColor = '#555555';
