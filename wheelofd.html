@@ -223,36 +223,6 @@
       animation: tileGlow 1.8s ease-out forwards;
     }
 
-    .success-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .success-modal.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .success-modal h2 {
-      font-size: 2rem;
-      color: #00ff88;
-      margin-bottom: 15px;
-    }
-
     @media (min-width: 768px) {
       .game-container {
         flex-direction: row;
@@ -273,7 +243,7 @@
 
   <header>
     <h1 id="player-title">Wheel of D</h1>
-    <div class="status-bar">Simbolo <span id="current-stage">1</span> / 9 completati</div>
+    <div class="status-bar">Simboli sbloccati: <span id="current-stage">0</span> / 9</div>
   </header>
 
   <main class="game-container">
@@ -312,14 +282,22 @@
 
   </main>
 
-  <div class="success-modal" id="success-modal">
-    <h2>QR Code Completato!</h2>
-    <p>Hai allineato tutti e 9 i simboli con successo.</p>
-  </div>
-
   <script>
     const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
     document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
+
+    // 9 DESCRIZIONI PERSONALIZZATE PER OGNI SIMBOLO
+    const symbolDescriptions = [
+      "Saturno",
+      "Una barca sotto sopra",
+      "Il grande carro",
+      "Sotto sopra, un indizio per un altro simbolo",
+      "",
+      "Una E un po' particolare, chi sa sa...",
+      "L'occhio di Horus",
+      "Una piuma",
+      "Scontato"
+    ];
 
     const targetAngles = [
       { outer: 93.453,  middle: 0.310757, inner: 666 },
@@ -329,14 +307,16 @@
       { outer: 0,       middle: 176.602,  inner: 336.852 },
       { outer: 310.957, middle: 40.0678,  inner: 666 },
       { outer: 666,     middle: 3.67103,   inner: 245.087 },
-      { outer: 0,       middle: 176.602,  inner: 336.852 },
+      { outer: 344.821, middle: 19.0264,  inner: 666 },
       { outer: 174.682, middle: 0.310757, inner: 666 }
     ];
 
-    let currentStage = 0;
-    const snapTolerance = 1;
+    const snapTolerance = 2;
     let isLockedForAnimation = false;
     let pauseTimer = null;
+
+    // Tracciamo quali tasselli sono stati sbloccati
+    let unlockedStages = [false, false, false, false, false, false, false, false, false];
 
     let ringsState = {
       outer: 0,
@@ -348,7 +328,7 @@
 
     function saveProgress() {
       const saveData = {
-        currentStage: currentStage,
+        unlockedStages: unlockedStages,
         ringsState: ringsState
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
@@ -359,23 +339,23 @@
       if (rawSave) {
         try {
           const saveData = JSON.parse(rawSave);
-          currentStage = saveData.currentStage || 0;
+          unlockedStages = saveData.unlockedStages || [false, false, false, false, false, false, false, false, false];
           ringsState = saveData.ringsState || { outer: 0, middle: 0, inner: 0 };
 
-          for (let i = 0; i < currentStage; i++) {
-            const tileEl = document.getElementById(`tile-${i}`);
-            if (tileEl) tileEl.classList.add('unlocked');
-          }
+          let count = 0;
+          unlockedStages.forEach((isUnlocked, index) => {
+            if (isUnlocked) {
+              const tileEl = document.getElementById(`tile-${index}`);
+              if (tileEl) tileEl.classList.add('unlocked');
+              count++;
+            }
+          });
 
-          document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+          document.getElementById('current-stage').textContent = count;
 
           document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
           document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
           document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
-
-          if (currentStage >= 9) {
-            document.getElementById('success-modal').classList.add('show');
-          }
         } catch (e) {
           console.error("Errore caricamento progressi:", e);
         }
@@ -392,50 +372,51 @@
       return diff > 180 ? 360 - diff : diff;
     }
 
-    // Verifica la fase relativa tra i cerchi attivi e restituisce i target angolari assoluti per lo snap
+    // Controlla TUTTI i simboli non ancora sbloccati (permette l'ordine libero)
     function checkRelativeAlignment() {
-      if (currentStage >= 9) return null;
+      if (unlockedStages.every(stage => stage === true)) return null;
 
-      const target = targetAngles[currentStage];
-      const activeKeys = ['outer', 'middle', 'inner'].filter(k => target[k] !== 666);
+      for (let stageIdx = 0; stageIdx < targetAngles.length; stageIdx++) {
+        // Salta i simboli già trovati in precedenza
+        if (unlockedStages[stageIdx]) continue;
 
-      if (activeKeys.length === 0) return null;
+        const target = targetAngles[stageIdx];
+        const activeKeys = ['outer', 'middle', 'inner'].filter(k => target[k] !== 666);
 
-      // Se c'è solo un cerchio attivo per il simbolo
-      if (activeKeys.length === 1) {
-        const key = activeKeys[0];
-        if (angleDiff(ringsState[key], target[key]) <= snapTolerance) {
-          let nextState = { ...ringsState };
-          nextState[key] = normalizeAngle(target[key]);
-          return nextState;
+        if (activeKeys.length === 0) continue;
+
+        let isMatch = false;
+
+        if (activeKeys.length === 1) {
+          const key = activeKeys[0];
+          if (angleDiff(ringsState[key], target[key]) <= snapTolerance) {
+            isMatch = true;
+          }
+        } else {
+          const baseKey = activeKeys[0];
+          const userBaseAngle = ringsState[baseKey];
+          const targetBaseAngle = target[baseKey];
+          const rotationOffset = userBaseAngle - targetBaseAngle;
+
+          let isRelativeMatch = true;
+          for (let i = 1; i < activeKeys.length; i++) {
+            const key = activeKeys[i];
+            const expectedAngle = normalizeAngle(target[key] + rotationOffset);
+            if (angleDiff(ringsState[key], expectedAngle) > snapTolerance) {
+              isRelativeMatch = false;
+              break;
+            }
+          }
+          if (isRelativeMatch) isMatch = true;
         }
-        return null;
-      }
 
-      // Se ci sono più cerchi attivi: controlliamo se le relative differenze rispecchiano la combinazione target
-      const baseKey = activeKeys[0];
-      const userBaseAngle = ringsState[baseKey];
-      const targetBaseAngle = target[baseKey];
-      const rotationOffset = userBaseAngle - targetBaseAngle;
-
-      let isRelativeMatch = true;
-
-      for (let i = 1; i < activeKeys.length; i++) {
-        const key = activeKeys[i];
-        const expectedAngle = normalizeAngle(target[key] + rotationOffset);
-        if (angleDiff(ringsState[key], expectedAngle) > snapTolerance) {
-          isRelativeMatch = false;
-          break;
+        if (isMatch) {
+          let snapState = { ...ringsState };
+          activeKeys.forEach(k => {
+            snapState[k] = normalizeAngle(target[k]);
+          });
+          return { stageIdx: stageIdx, snapAngles: snapState };
         }
-      }
-
-      // Se il simbolo è allineato (anche a +90° o in un'altra direzione), forziamo lo snap agli angoli target definiti
-      if (isRelativeMatch) {
-        let snapState = { ...ringsState };
-        activeKeys.forEach(k => {
-          snapState[k] = normalizeAngle(target[k]);
-        });
-        return snapState;
       }
 
       return null;
@@ -443,12 +424,12 @@
 
     function scheduleAlignmentCheck() {
       if (pauseTimer) clearTimeout(pauseTimer);
-      if (isLockedForAnimation || currentStage >= 9) return;
+      if (isLockedForAnimation || unlockedStages.every(stage => stage === true)) return;
 
       pauseTimer = setTimeout(() => {
-        const snapAngles = checkRelativeAlignment();
-        if (snapAngles) {
-          triggerUnlockSequence(snapAngles);
+        const result = checkRelativeAlignment();
+        if (result) {
+          triggerUnlockSequence(result.stageIdx, result.snapAngles);
         }
       }, 1000);
     }
@@ -469,7 +450,7 @@
       }
 
       function onStart(e) {
-        if (currentStage >= 9 || isLockedForAnimation) return;
+        if (isLockedForAnimation || unlockedStages.every(stage => stage === true)) return;
         isDragging = true;
         ringEl.classList.add('dragging');
         
@@ -515,10 +496,11 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    function triggerUnlockSequence(snapAngles) {
+    function triggerUnlockSequence(stageIdx, snapAngles) {
       isLockedForAnimation = true;
+      unlockedStages[stageIdx] = true;
 
-      // 1. Snap dolce sui cerchi attivi portandoli agli angoli target corretti per quel simbolo
+      // 1. Snap dolce sui cerchi interessati
       ringsState = snapAngles;
       document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
       document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
@@ -527,23 +509,22 @@
       // 2. Feedback bordi verdi
       document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
 
-      // 3. Testo simbolo sbloccato
+      // 3. Descrizione personalizzata sotto la ruota
       const feedbackEl = document.getElementById('symbol-feedback');
-      const completedSymbolNumber = currentStage + 1;
-      feedbackEl.textContent = `✦ Simbolo ${completedSymbolNumber} Allineato! ✦`;
+      feedbackEl.textContent = symbolDescriptions[stageIdx];
       feedbackEl.classList.add('show');
 
-      // 4. Mostra il pezzo di QR code nella griglia 3x3
-      const tileEl = document.getElementById(`tile-${currentStage}`);
+      // 4. Mostra la casella corrispondente nella griglia (stageIdx)
+      const tileEl = document.getElementById(`tile-${stageIdx}`);
       if (tileEl) {
         tileEl.classList.add('unlocked', 'flash-unlock');
       }
 
-      currentStage++;
-      document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+      const totalUnlocked = unlockedStages.filter(Boolean).length;
+      document.getElementById('current-stage').textContent = totalUnlocked;
       saveProgress();
 
-      // Reset dopo 2 secondi
+      // Sblocco dopo 2 secondi
       setTimeout(() => {
         document.getElementById('ring-outer').style.borderColor = '#333333';
         document.getElementById('ring-middle').style.borderColor = '#555555';
@@ -553,12 +534,6 @@
         if (tileEl) tileEl.classList.remove('flash-unlock');
 
         isLockedForAnimation = false;
-
-        if (currentStage >= 9) {
-          setTimeout(() => {
-            document.getElementById('success-modal').classList.add('show');
-          }, 400);
-        }
       }, 2000);
     }
 
