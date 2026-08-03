@@ -42,14 +42,19 @@
       margin-top: 5px;
     }
 
-    /* Container Principale Responsivo */
     .game-container {
       width: 100%;
       max-width: 1200px;
       display: flex;
-      flex-direction: column; /* Layout Mobile: dall'alto verso il basso */
+      flex-direction: column;
       align-items: center;
       gap: 30px;
+    }
+
+    .wheel-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .wheel-zone {
@@ -84,12 +89,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.3s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* Snap dolce */
       touch-action: none;
     }
 
-    .wheel-ring:active {
+    .wheel-ring.dragging {
       cursor: grabbing;
+      transition: border-color 0.2s ease; /* Disabilita transizione durante drag */
     }
 
     .ring-outer {
@@ -121,6 +127,24 @@
       pointer-events: none;
     }
 
+    /* Messaggio sotto la ruota */
+    .symbol-feedback {
+      margin-top: 15px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #00ff88;
+      min-height: 28px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateY(10px);
+    }
+
+    .symbol-feedback.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .grid-zone {
       width: 90vw;
       max-width: 440px;
@@ -144,6 +168,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: box-shadow 0.4s ease, border-color 0.4s ease;
     }
 
     .grid-tile span {
@@ -160,8 +185,8 @@
       top: 0;
       left: 0;
       opacity: 0;
-      transform: scale(0.8);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: scale(0.7);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .grid-tile.unlocked img {
@@ -171,6 +196,26 @@
 
     .grid-tile.unlocked {
       border: none;
+    }
+
+    /* Effetto speciale sullo sblocco del tessello */
+    @keyframes tileGlow {
+      0% {
+        box-shadow: 0 0 0px #00ff88;
+        border: 2px solid #00ff88;
+      }
+      50% {
+        box-shadow: 0 0 25px #00ff88;
+        border: 2px solid #00ff88;
+      }
+      100% {
+        box-shadow: 0 0 0px transparent;
+        border: none;
+      }
+    }
+
+    .grid-tile.flash-unlock {
+      animation: tileGlow 1.8s ease-out forwards;
     }
 
     .success-modal {
@@ -228,27 +273,27 @@
 
   <main class="game-container">
     
-    <!-- ZONA RUOTA A CERCHI CONCENTRICI ROTANTI -->
-    <section class="wheel-zone" id="wheel-container">
-      <div class="alignment-marker"></div>
+    <div class="wheel-column">
+      <section class="wheel-zone" id="wheel-container">
+        <div class="alignment-marker"></div>
 
-      <!-- Cerchio Esterno -->
-      <div class="wheel-ring ring-outer" id="ring-outer">
-        <img src="outer.png" alt="Anello Esterno" class="ring-img" onerror="this.style.display='none'">
-      </div>
+        <div class="wheel-ring ring-outer" id="ring-outer">
+          <img src="outer.png" alt="Anello Esterno" class="ring-img" onerror="this.style.display='none'">
+        </div>
 
-      <!-- Cerchio Intermedio -->
-      <div class="wheel-ring ring-middle" id="ring-middle">
-        <img src="middle.png" alt="Anello Intermedio" class="ring-img" onerror="this.style.display='none'">
-      </div>
+        <div class="wheel-ring ring-middle" id="ring-middle">
+          <img src="middle.png" alt="Anello Intermedio" class="ring-img" onerror="this.style.display='none'">
+        </div>
 
-      <!-- Cerchio Interno -->
-      <div class="wheel-ring ring-inner" id="ring-inner">
-        <img src="inner.png" alt="Anello Interno" class="ring-img" onerror="this.style.display='none'">
-      </div>
-    </section>
+        <div class="wheel-ring ring-inner" id="ring-inner">
+          <img src="inner.png" alt="Anello Interno" class="ring-img" onerror="this.style.display='none'">
+        </div>
+      </section>
 
-    <!-- ZONA GRIGLIA 3x3 (QR Code) -->
+      <!-- Feedback grafico testo simbolo -->
+      <div id="symbol-feedback" class="symbol-feedback"></div>
+    </div>
+
     <section class="grid-zone">
       <div class="grid-tile" id="tile-0"><span>1</span><img src="qr1.jpeg" alt="QR 1" onerror="this.style.display='none'"></div>
       <div class="grid-tile" id="tile-1"><span>2</span><img src="qr2.jpeg" alt="QR 2" onerror="this.style.display='none'"></div>
@@ -263,43 +308,129 @@
 
   </main>
 
-  <!-- Modal di completamento -->
   <div class="success-modal" id="success-modal">
     <h2>QR Code Completato!</h2>
     <p>Hai allineato tutti e 9 i simboli con successo.</p>
   </div>
 
   <script>
-    // Recupera nome del giocatore da sessionStorage
-    const playerName = sessionStorage.getItem('playerName');
-    if (playerName) {
-      document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
-    }
+    const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
+    document.getElementById('player-title').textContent = `Wheel of D - ${playerName}`;
 
-    // Configurazione dei 9 simboli (Gradi target per Outer, Middle, Inner)
+    // Configurazione dei 9 simboli (666 indica che il cerchio viene ignorato)
     const targetAngles = [
-      { outer: 45,  middle: 120, inner: 270 }, // Simbolo 1
-      { outer: 90,  middle: 180, inner: 45  }, // Simbolo 2
-      { outer: 180, middle: 45,  inner: 135 }, // Simbolo 3
-      { outer: 270, middle: 270, inner: 90  }, // Simbolo 4
-      { outer: 0,   middle: 90,  inner: 225 }, // Simbolo 5
-      { outer: 135, middle: 315, inner: 0   }, // Simbolo 6
-      { outer: 225, middle: 60,  inner: 180 }, // Simbolo 7
-      { outer: 315, middle: 210, inner: 315 }, // Simbolo 8
-      { outer: 60,  middle: 330, inner: 105 }  // Simbolo 9
+      { outer: 93.453,  middle: 0.310757, inner: 666 },       // Simbolo 1
+      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 2
+      { outer: 95.2604, middle: 220.739,  inner: 72.4342 },   // Simbolo 3
+      { outer: 260.7,   middle: 2.43437,  inner: 666 },       // Simbolo 4
+      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 5
+      { outer: 310.957, middle: 40.0678,  inner: 666 },       // Simbolo 6
+      { outer: 666,     middle: 3.67103,   inner: 245.087 },   // Simbolo 7
+      { outer: 0,       middle: 176.602,  inner: 336.852 },   // Simbolo 8
+      { outer: 174.682, middle: 0.310757, inner: 666 }        // Simbolo 9
     ];
 
-    let currentStage = 0; // Da 0 a 8
-    const tolerance = 7;   // Tolleranza in gradi per considerare l'allineamento corretto
+    let currentStage = 0;
+    const snapTolerance = 1; // Tolleranza a 1 grado
+    let isLockedForAnimation = false; // Blocco 2s rotazione
 
-    // Stato rotazione corrente dei 3 anelli (in gradi)
-    const ringsState = {
+    let ringsState = {
       outer: 0,
       middle: 0,
       inner: 0
     };
 
-    // Inizializza l'interazione libera con Mouse e Touch
+    const STORAGE_KEY = `wheelOfD_save_${playerName.toLowerCase()}`;
+
+    function saveProgress() {
+      const saveData = {
+        currentStage: currentStage,
+        ringsState: ringsState
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+    }
+
+    function loadProgress() {
+      const rawSave = localStorage.getItem(STORAGE_KEY);
+      if (rawSave) {
+        try {
+          const saveData = JSON.parse(rawSave);
+          currentStage = saveData.currentStage || 0;
+          ringsState = saveData.ringsState || { outer: 0, middle: 0, inner: 0 };
+
+          for (let i = 0; i < currentStage; i++) {
+            const tileEl = document.getElementById(`tile-${i}`);
+            if (tileEl) tileEl.classList.add('unlocked');
+          }
+
+          document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+
+          document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
+          document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
+          document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
+
+          if (currentStage >= 9) {
+            document.getElementById('success-modal').classList.add('show');
+          }
+        } catch (e) {
+          console.error("Errore caricamento progressi:", e);
+        }
+      }
+    }
+
+    // Normalizza angolo in intervallo [0, 360)
+    function normalizeAngle(angle) {
+      let a = angle % 360;
+      return a < 0 ? a + 360 : a;
+    }
+
+    // Calcola la differenza minima tra due angoli
+    function angleDiff(a, b) {
+      let diff = Math.abs(normalizeAngle(a) - normalizeAngle(b));
+      return diff > 180 ? 360 - diff : diff;
+    }
+
+    // --- VERIFICA ALLINEAMENTO RELATIVO ---
+    function checkRelativeAlignment() {
+      if (currentStage >= 9) return null;
+
+      const target = targetAngles[currentStage];
+      
+      // Troviamo il primo cerchio attivo (diverso da 666) come riferimento di base
+      let baseKey = null;
+      if (target.outer !== 666) baseKey = 'outer';
+      else if (target.middle !== 666) baseKey = 'middle';
+      else if (target.inner !== 666) baseKey = 'inner';
+
+      if (!baseKey) return null;
+
+      const currentBaseAngle = ringsState[baseKey];
+      const targetBaseAngle = target[baseKey];
+      
+      // Calcoliamo l'offset dinamico di rotazione dell'utente
+      const rotationOffset = currentBaseAngle - targetBaseAngle;
+
+      // Verifichiamo se tutti i cerchi attivi rispettano la stessa differenza di fase
+      const keys = ['outer', 'middle', 'inner'];
+      let isAligned = true;
+      let idealAngles = { ...ringsState };
+
+      for (let key of keys) {
+        if (target[key] !== 666) {
+          const expectedAngle = normalizeAngle(target[key] + rotationOffset);
+          const currentAngle = normalizeAngle(ringsState[key]);
+          
+          if (angleDiff(currentAngle, expectedAngle) > snapTolerance) {
+            isAligned = false;
+            break;
+          }
+          idealAngles[key] = expectedAngle;
+        }
+      }
+
+      return isAligned ? idealAngles : null;
+    }
+
     function setupRingRotation(ringId, ringKey) {
       const ringEl = document.getElementById(ringId);
       let isDragging = false;
@@ -316,7 +447,10 @@
       }
 
       function onStart(e) {
+        if (currentStage >= 9 || isLockedForAnimation) return;
         isDragging = true;
+        ringEl.classList.add('dragging');
+        
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         startAngle = getAngle(clientX, clientY);
@@ -325,23 +459,28 @@
       }
 
       function onMove(e) {
-        if (!isDragging) return;
+        if (!isDragging || isLockedForAnimation) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const currentAngle = getAngle(clientX, clientY);
         let delta = currentAngle - startAngle;
 
-        let newRotation = (initialRotation + delta) % 360;
-        if (newRotation < 0) newRotation += 360;
+        let newRotation = normalizeAngle(initialRotation + delta);
 
         ringsState[ringKey] = newRotation;
         ringEl.style.transform = `rotate(${newRotation}deg)`;
 
-        checkAlignment();
+        // Controllo tempo reale durante il drag
+        verifyAndUnlock();
       }
 
       function onEnd() {
+        if (!isDragging) return;
         isDragging = false;
+        ringEl.classList.remove('dragging');
+
+        saveProgress();
+        verifyAndUnlock();
       }
 
       ringEl.addEventListener('mousedown', onStart);
@@ -353,54 +492,68 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    setupRingRotation('ring-outer', 'outer');
-    setupRingRotation('ring-middle', 'middle');
-    setupRingRotation('ring-inner', 'inner');
+    function verifyAndUnlock() {
+      if (isLockedForAnimation || currentStage >= 9) return;
 
-    // Calcola la differenza minima di angolo (gestendo il ciclo 0-360)
-    function angleDiff(a, b) {
-      let diff = Math.abs((a - b) % 360);
-      return diff > 180 ? 360 - diff : diff;
-    }
+      const idealAngles = checkRelativeAlignment();
 
-    // Controlla se i 3 cerchi sono allineati ai target dello stage attuale
-    function checkAlignment() {
-      if (currentStage >= 9) return;
-
-      const target = targetAngles[currentStage];
-      const diffOuter = angleDiff(ringsState.outer, target.outer);
-      const diffMiddle = angleDiff(ringsState.middle, target.middle);
-      const diffInner = angleDiff(ringsState.inner, target.inner);
-
-      if (diffOuter <= tolerance && diffMiddle <= tolerance && diffInner <= tolerance) {
-        unlockTile(currentStage);
+      if (idealAngles) {
+        triggerUnlockSequence(idealAngles);
       }
     }
 
-    // Sblocca un tessello della griglia 3x3 e passa allo stage successivo
-    function unlockTile(stageIndex) {
-      const tileEl = document.getElementById(`tile-${stageIndex}`);
-      if (tileEl && !tileEl.classList.contains('unlocked')) {
-        tileEl.classList.add('unlocked');
+    function triggerUnlockSequence(idealAngles) {
+      isLockedForAnimation = true; // Blocco rotazione per 2 secondi
 
-        // Effetto grafico sul bordo dell'anello
-        document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
-        setTimeout(() => {
-          document.getElementById('ring-outer').style.borderColor = '#333333';
-          document.getElementById('ring-middle').style.borderColor = '#555555';
-          document.getElementById('ring-inner').style.borderColor = '#888888';
-        }, 600);
+      // 1. Snap dolce sulle posizioni ideali per i cerchi attivi
+      ringsState = idealAngles;
+      document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
+      document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
+      document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
 
-        currentStage++;
-        document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+      // 2. Feedback visivo bordi verdi
+      document.querySelectorAll('.wheel-ring').forEach(r => r.style.borderColor = '#00ff88');
+
+      // 3. Mostra testo simbolo sbloccato sotto la ruota
+      const feedbackEl = document.getElementById('symbol-feedback');
+      const completedSymbolNumber = currentStage + 1;
+      feedbackEl.textContent = `✦ Simbolo ${completedSymbolNumber} Allineato! ✦`;
+      feedbackEl.classList.add('show');
+
+      // 4. Sblocca la casella corrispondente nella griglia (Simbolo 1 -> Casella 1)
+      const tileEl = document.getElementById(`tile-${currentStage}`);
+      if (tileEl) {
+        tileEl.classList.add('unlocked', 'flash-unlock');
+      }
+
+      currentStage++;
+      document.getElementById('current-stage').textContent = Math.min(currentStage + 1, 9);
+      saveProgress();
+
+      // Reset dopo 2 secondi (sblocco controlli)
+      setTimeout(() => {
+        document.getElementById('ring-outer').style.borderColor = '#333333';
+        document.getElementById('ring-middle').style.borderColor = '#555555';
+        document.getElementById('ring-inner').style.borderColor = '#888888';
+        
+        feedbackEl.classList.remove('show');
+        if (tileEl) tileEl.classList.remove('flash-unlock');
+
+        isLockedForAnimation = false;
 
         if (currentStage >= 9) {
           setTimeout(() => {
             document.getElementById('success-modal').classList.add('show');
-          }, 800);
+          }, 400);
         }
-      }
+      }, 2000);
     }
+
+    setupRingRotation('ring-outer', 'outer');
+    setupRingRotation('ring-middle', 'middle');
+    setupRingRotation('ring-inner', 'inner');
+
+    loadProgress();
   </script>
 
 </body>
