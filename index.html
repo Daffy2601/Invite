@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invito Segreto</title>
+  <title>Accedi</title>
   <style>
     * {
       box-sizing: border-box;
@@ -103,13 +103,33 @@
     const nameInput = document.getElementById('guest-name');
     const errorMsg = document.getElementById('error-msg');
 
-    // Lista dei 24 nomi autorizzati in chiaro (in minuscolo)
-    const allowedNames = [
-      "salvo", "salvatore", "matte", "matteo", "nino", "rocco", 
-      "elia", "giovanni", "riccardo", "alberto", "diego", "amelie", 
-      "tommaso", "antonio", "anto", "neno", "stefano", "enrico", 
-      "alessio", "luca", "giova", "marco", "fabio", "silvia"
-    ];
+    // Mappa Nomi -> Numeri primi che finiscono in 3
+    const userMap = {
+      "salvo": 3,
+      "salvatore": 3,
+      "matte": 13,
+      "matteo": 13,
+      "nino": 23,
+      "rocco": 23,
+      "elia": 43,
+      "giovanni": 53,
+      "riccardo": 73,
+      "alberto": 83,
+      "diego": 103,
+      "amelie": 113,
+      "tommaso": 163,
+      "antonio": 173,
+      "anto": 173,
+      "neno": 193,
+      "stefano": 193,
+      "enrico": 223,
+      "alessio": 233,
+      "luca": 263,
+      "giova": 263,
+      "marco": 283,
+      "fabio": 293,
+      "silvia": 313
+    };
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -121,15 +141,13 @@
 
       if (!rawName) return;
 
-      // Controllo diretto (Case-Insensitive)
-      if (allowedNames.includes(normalizedName)) {
-        // 1. Salva il nome digitato in sessionStorage
-        sessionStorage.setItem('guestName', rawName);
+      if (userMap.hasOwnProperty(normalizedName)) {
+        const userPrime = userMap[normalizedName];
+        sessionStorage.setItem('playerName', rawName);
         
-        // 2. Reindirizza a wheelofd.html
-        window.location.href = './wheelofd.html';
+        // Reindirizza con il numero primo come parametro URL
+        window.location.href = `./wheelofd.html?user=${userPrime}&name=${encodeURIComponent(rawName)}`;
       } else {
-        // Mostra errore se il nome non è autorizzato
         errorMsg.textContent = "Sei pregato/a di usare il tuo vero nome...";
         nameInput.value = "";
       }

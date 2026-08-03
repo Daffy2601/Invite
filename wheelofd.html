@@ -414,7 +414,7 @@
 
   </main>
 
-  <!-- Modal Finale Personalizzato -->
+  <!-- Modal Finale Personalizzato / Alert Ficcanaso -->
   <div class="final-modal" id="final-modal">
     <div class="final-modal-content">
       <button class="close-btn" id="close-modal-x">&times;</button>
@@ -425,37 +425,54 @@
   </div>
 
   <script>
-    const playerName = sessionStorage.getItem('playerName') || 'Giocatore';
+    // Recupera parametri dall'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const userPrime = parseInt(urlParams.get('user'), 10);
+    const urlName = urlParams.get('name') || '';
 
-    // MESSAGGI PERSONALIZZATI PER OGNI INVITATO/A
-    const personalMessages = {
-      "salvo": "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
-      "salvatore": "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
-      "matte": "Ué Matte agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
-      "matteo": "Ué Matte agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
-      "nino": "Bravo NiNuzzo, beddu figghiu miu, ora entra",
-      "rocco": "Bravo NiNuzzo, beddu figghiu miu, ora entra",
-      "elia": "Signore dell'inganno, non si è fatto ingannare da tutto ciò, le è concesso l'accesso",
-      "giovanni": "Signor G, BEH!? Pensavi sarebbe stato più difficile, quando entri non esordire con un frociosculo possibilmente",
-      "riccardo": "Bravo Ricky Montanane, ora puoi entrare col QR Code, ti aspettiamo Richard Mountainbike",
-      "alberto": "Albuuuuuuuuuu, entra dai ricchionazzo bastardo",
-      "diego": "Da grandi ruote da girare derivano grandi gruppi in cui entrare, muovi il culo Diego",
-      "amelie": "Brava Amebella, so che a Campotto tecnologie così non ne avete, temevo ti tirassi indietro",
-      "tommaso": "Tommy Immommy, quando compare un QR code queste persone gentili e per bene, si sbranano il pene",
-      "antonio": "Antotna, scansiona il QR bidone che non sei altro, Bidonanto",
-      "anto": "Antotna, scansiona il QR bidone che non sei altro, Bidonanto",
-      "neno": "Daje Neno, non penso ti dispiacerà se per una sera ti distraggo dai tuoi pomodori o dallo studio di mazzette IV",
-      "stefano": "Daje Neno, non penso ti dispiacerà se per una sera ti distraggo dai tuoi pomodori o dallo studio di mazzette IV",
-      "enrico": "Lo Scassone, cosa fai non entri, sarai felice di sapere che c'è anche Babbuz Nataluz",
-      "alessio": "Dai Bimba, ci hai messo anche troppo per sto giochino ora entra nel gruppo babbuz di minchiaz",
-      "luca": "Sugar, non penso tu ne abbia mai fatti di questi a meccanica, quindi direi che per essere la tua prima volta non te la sei cavatam male",
-      "giova": "Sugar, non penso tu ne abbia mai fatti di questi a meccanica, quindi direi che per essere la tua prima volta non te la sei cavatam male",
-      "marco": "Complimenti vicino, ora puoi entrare nel gruppo scansionando il codice",
-      "fabio": "Polissimo, dottore, esimio, collega (alla lontana), scansioni il codice QR adesso e non perda altro tempo",
-      "silvia": "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
+    // MESSAGGI INDICIZZATI TRAMITE NUMERI PRIMI
+    const primeMessages = {
+      3: "Sasà, Sal0089, ce l'abbiamo fatta, siamo arrivati e ora non ti resta che entrare",
+      13: "Ué Matte agg scassat o cazz, però sei stato bravo, bravo cucciolotto, ora entra",
+      23: "Bravo NiNuzzo, beddu figghiu miu, ora entra",
+      43: "Signore dell'inganno, non si è fatto ingannare da tutto ciò, le è concesso l'accesso",
+      53: "Signor G, BEH!? Pensavi sarebbe stato più difficile, quando entri non esordire con un frociosculo possibilmente",
+      73: "Bravo Ricky Montanane, ora puoi entrare col QR Code, ti aspettiamo Richard Mountainbike",
+      83: "Albuuuuuuuuuu, entra dai ricchionazzo bastardo",
+      103: "Da grandi ruote da girare derivano grandi gruppi in cui entrare, muovi il culo Diego",
+      113: "Brava Amebella, so che a Campotto tecnologie così non ne avete, temevo ti tirassi indietro",
+      163: "Tommy Immommy, quando compare un QR code queste persone gentili e per bene, si sbranano il pene",
+      173: "Antotna, scansiona il QR bidone che non sei altro, Bidonanto",
+      193: "Daje Neno, non penso ti dispiacerà se per una sera ti distraggo dai tuoi pomodori o dallo studio di mazzette IV",
+      223: "Lo Scassone, cosa fai non entri, sarai felice di sapere che c'è anche Babbuz Nataluz",
+      233: "Dai Bimba, ci hai messo anche troppo per sto giochino ora entra nel gruppo babbuz di minchiaz",
+      263: "Sugar, non penso tu ne abbia mai fatti di questi a meccanica, quindi direi che per essere la tua prima volta non te la sei cavatam male",
+      283: "Complimenti vicino, ora puoi entrare nel gruppo scansionando il codice",
+      293: "Polissimo, dottore, esimio, collega (alla lontana), scansioni il codice QR adesso e non perda altro tempo",
+      313: "D'altronde... Bonga Tonga e si sa... Banga Tanga, ora scansiona il codice, muvat"
     };
 
-    const defaultMessage = "Complimenti! Hai dimostrato grande abilità nel ricomporre il codice segreto.";
+    // CONTROLLO FICCANASO: se il parametro 'user' manca o non è uno dei primi autorizzati
+    if (!userPrime || !primeMessages.hasOwnProperty(userPrime)) {
+      window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('final-modal-title').textContent = "Alt!";
+        document.getElementById('final-modal-title').style.color = "#ff4d4d";
+        document.getElementById('final-modal-message').textContent = "Fai il ficcanaso? Smettila subito";
+        
+        const closeBtnX = document.getElementById('close-modal-x');
+        const closeBtn = document.getElementById('close-modal-btn');
+        
+        closeBtn.textContent = "Torna all'ingresso";
+        
+        const redirectToIndex = () => { window.location.href = './index.html'; };
+        closeBtnX.addEventListener('click', redirectToIndex);
+        closeBtn.addEventListener('click', redirectToIndex);
+        
+        document.getElementById('final-modal').classList.add('show');
+      });
+    }
+
+    const playerName = urlName || sessionStorage.getItem('playerName') || 'Giocatore';
 
     // 8 DESCRIZIONI
     const symbolDescriptions = [
@@ -484,10 +501,8 @@
     let isLockedForAnimation = false;
     let pauseTimer = null;
 
-    // Tracciamo quali tasselli della griglia (da 0 a 8) sono stati sbloccati
     let unlockedTiles = [false, false, false, false, false, false, false, false, false];
 
-    // Imposta la ruota esterna inizialmente a 90°
     let ringsState = {
       outer: 90,
       middle: 0,
@@ -517,30 +532,20 @@
     document.getElementById('reopen-msg-btn').addEventListener('click', openModal);
 
     function checkCompletionState() {
-        if (unlockedTiles.every(t => t === true)) {
-            document.getElementById('grid-zone').classList.add('completed');
-            document.getElementById('reopen-msg-btn').classList.add('show');
+      if (unlockedTiles.every(t => t === true)) {
+        document.getElementById('grid-zone').classList.add('completed');
+        document.getElementById('reopen-msg-btn').classList.add('show');
 
-            // 1. Recupera il nome salvato (se manca usa playerName)
-            const rawName = sessionStorage.getItem('playerName') || playerName || '';
-            
-            // 2. Normalizza la chiave (minuscolo, senza spazi ai bordi)
-            const normalizedKey = rawName.toLowerCase().trim();
-            
-            // 3. Cerca il messaggio personalizzato
-            const customMessage = personalMessages[normalizedKey] || defaultMessage;
+        const customMessage = primeMessages[userPrime] || "Complimenti! Hai ricomposto il codice segreto.";
 
-            // 4. Popola e mostra il modal
-            document.getElementById('final-modal-title').textContent = (rawName && rawName !== 'Giocatore') 
-            ? `Complimenti ${rawName}!` 
-            : "Complimenti!";
-            
-            document.getElementById('final-modal-message').textContent = customMessage;
+        document.getElementById('final-modal-title').style.color = "#00ff88";
+        document.getElementById('final-modal-title').textContent = (playerName && playerName !== 'Giocatore') ? `Complimenti ${playerName}!` : "Complimenti!";
+        document.getElementById('final-modal-message').textContent = customMessage;
 
-            setTimeout(() => {
-            openModal();
-            }, 1200);
-        }
+        setTimeout(() => {
+          openModal();
+        }, 1200);
+      }
     }
 
     function loadProgress() {
@@ -566,7 +571,6 @@
         }
       }
 
-      // Applica la rotazione corrente agli anelli (di default outer parte a 90°)
       document.getElementById('ring-outer').style.transform = `rotate(${ringsState.outer}deg)`;
       document.getElementById('ring-middle').style.transform = `rotate(${ringsState.middle}deg)`;
       document.getElementById('ring-inner').style.transform = `rotate(${ringsState.inner}deg)`;
@@ -759,7 +763,6 @@
           if (tileEl) tileEl.classList.remove('flash-unlock');
         });
 
-        // Controlla se la griglia è stata completata per unificare le immagini e mostrare il modal
         checkCompletionState();
 
         isLockedForAnimation = false;
