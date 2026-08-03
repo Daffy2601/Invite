@@ -537,7 +537,7 @@
         const customMessage = primeMessages[userPrime] || "Complimenti! Hai ricomposto il codice segreto.";
 
         document.getElementById('final-modal-title').style.color = "#00ff88";
-        document.getElementById('final-modal-title').textContent = (playerName && playerName !== 'Giocatore') ? `Complimenti ${playerName}!` : "Complimenti!";
+        document.getElementById('final-modal-title').textContent = "Complimenti!";
         document.getElementById('final-modal-message').textContent = customMessage;
 
         setTimeout(() => {
